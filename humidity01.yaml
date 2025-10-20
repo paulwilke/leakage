@@ -1,0 +1,205 @@
+# ============================================================================
+# ESPHome Konfiguration für Humidity/Temperature Sensor
+# Hardware: ESP32 NodeMCU-32S mit SHT4x Sensor
+# Verwendung: Temperatur- und Luftfeuchtigkeitsmessung
+# ============================================================================
+
+esphome:
+  name: humidity01
+  friendly_name: Humidity Sensor
+
+# ============================================================================
+# ESP32 Konfiguration
+# ============================================================================
+esp32:
+  board: nodemcu-32s
+  framework:
+    type: esp-idf  # ESP-IDF Framework für bessere Stabilität
+
+# ============================================================================
+# Deep Sleep Konfiguration (aktuell deaktiviert)
+# Kann aktiviert werden für batteriebetriebene Sensoren
+# ============================================================================
+#deep_sleep:
+#  run_duration: 1min      # Wie lange der ESP aktiv bleibt
+#  sleep_duration: 30min   # Wie lange der ESP schläft
+
+# ============================================================================
+# Logging
+# Ermöglicht Debug-Ausgaben über serielle Schnittstelle
+# ============================================================================
+logger:
+  # Log-Level kann angepasst werden: DEBUG, INFO, WARN, ERROR
+  # level: DEBUG
+
+# ============================================================================
+# Home Assistant API
+# Ermöglicht die Integration mit Home Assistant
+# ============================================================================
+api:
+  encryption:
+    key: "xxx"  # API Verschlüsselungsschlüssel - sollte eindeutig sein
+
+# ============================================================================
+# OTA Updates (Over-The-Air)
+# Ermöglicht Firmware-Updates über WiFi
+# ============================================================================
+ota:
+  - platform: esphome
+    password: "xxx"  # OTA Update Passwort
+
+# ============================================================================
+# WiFi Konfiguration
+# Statische IP-Adresse für zuverlässige Verbindung
+# ============================================================================
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+
+  # Statische IP-Konfiguration (empfohlen für IoT-Geräte)
+  manual_ip:
+    static_ip: 10.10.50.91          # Feste IP-Adresse des Sensors
+    gateway: 10.10.50.1             # Gateway (Mikrotik Router für IoT VLAN)
+    subnet: 255.255.255.0           # Subnetzmaske
+
+  # Fallback Access Point bei WiFi-Problemen
+  ap:
+    ssid: "Humidity 1 Fallback Hotspot"
+    password: "bvJU6UGN6jIc"
+
+# ============================================================================
+# Captive Portal
+# Ermöglicht WiFi-Konfiguration über Hotspot
+# ============================================================================
+captive_portal:
+
+# ============================================================================
+# Webserver
+# Ermöglicht direkten Zugriff über Browser (http://10.10.50.91)
+# ============================================================================
+web_server:
+  port: 80
+
+# ============================================================================
+# Zeitsynchronisation
+# Synchronisiert die Zeit mit Home Assistant
+# ============================================================================
+time:
+  - platform: homeassistant
+    id: esptime
+
+# ============================================================================
+# I2C Bus Konfiguration
+# Für die Kommunikation mit dem SHT4x Sensor
+# ============================================================================
+i2c:
+  sda: GPIO21  # I2C Data Pin
+  scl: GPIO22  # I2C Clock Pin
+  scan: true   # Scannt beim Start nach I2C-Geräten und zeigt diese im Log an
+  #frequency: 100kHz  # Standard-Frequenz, kann bei Problemen angepasst werden
+
+# ============================================================================
+# Sensoren
+# ============================================================================
+sensor:
+  # --------------------------------------------------------------------------
+  # SHT4x Temperatur- und Luftfeuchtigkeitssensor
+  # I2C-Adresse: 0x44 (Standard)
+  # --------------------------------------------------------------------------
+  - platform: sht4x
+    # Temperatur-Messung
+    temperature:
+      name: "Temperatur"
+      # Genauigkeit der Messung (optional)
+      # Optionen: High, Med, Low
+      # Standard: High
+      #accuracy: High
+
+      # Filter zur Glättung der Messwerte (optional)
+      #filters:
+      #  - offset: 0.0  # Kalibrierungs-Offset in °C
+      #  - median:      # Median-Filter gegen Ausreißer
+      #      window_size: 5
+      #      send_every: 3
+
+    # Luftfeuchtigkeits-Messung
+    humidity:
+      name: "Luftfeuchtigkeit"
+      # Filter zur Glättung der Messwerte (optional)
+      #filters:
+      #  - offset: 0.0  # Kalibrierungs-Offset in %
+      #  - median:      # Median-Filter gegen Ausreißer
+      #      window_size: 5
+      #      send_every: 3
+
+    # Erweiterte Konfigurationsoptionen (alle optional):
+
+    # Messgenauigkeit
+    # precision: High  # Optionen: High, Med, Low | Standard: High
+
+    # Heater-Konfiguration (zum Entfernen von Kondenswasser auf dem Sensor)
+    # heater_max_duty: 0.0     # Max. Duty Cycle (0.0 - 0.05) | Standard: 0.0 (aus)
+    # heater_power: High       # Heizleistung: High, Med, Low | Standard: High
+    # heater_time: Long        # Heizdauer: Long (1000ms), Short (100ms) | Standard: Long
+
+    # I2C-Adresse (falls abweichend vom Standard)
+    # address: 0x44  # Standard-Adresse des SHT4x
+
+    # Update-Intervall
+    update_interval: 60s  # Messung alle 60 Sekunden
+
+  # --------------------------------------------------------------------------
+  # WiFi Signal Stärke (optional, aber empfohlen für Diagnose)
+  # --------------------------------------------------------------------------
+  - platform: wifi_signal
+    name: "WiFi Signal"
+    update_interval: 60s
+
+  # --------------------------------------------------------------------------
+  # Uptime Sensor (optional, zeigt wie lange der ESP läuft)
+  # --------------------------------------------------------------------------
+  - platform: uptime
+    name: "Uptime"
+    update_interval: 60s
+
+# ============================================================================
+# Binärsensoren (optional)
+# ============================================================================
+binary_sensor:
+  # Status-Sensor: Zeigt an ob der ESP mit Home Assistant verbunden ist
+  - platform: status
+    name: "Status"
+
+# ============================================================================
+# Text-Sensoren (optional)
+# ============================================================================
+text_sensor:
+  # Zeigt die WiFi-Informationen an
+  - platform: wifi_info
+    ip_address:
+      name: "IP Adresse"
+    ssid:
+      name: "SSID"
+    mac_address:
+      name: "MAC Adresse"
+
+# ============================================================================
+# HINWEISE:
+#
+# 1. Secrets-Datei: Erstelle eine secrets.yaml mit folgendem Inhalt:
+#    wifi_ssid: "DeinWiFiName"
+#    wifi_password: "DeinWiFiPasswort"
+#
+# 2. API-Key und OTA-Passwort: Ersetze "xxx" durch sichere Werte
+#    Diese können mit ESPHome generiert werden
+#
+# 3. Deep Sleep: Wenn du den Sensor batteriebetrieben nutzen möchtest,
+#    entferne die Kommentare bei der deep_sleep Konfiguration
+#
+# 4. Sensor-Name: Der Name kann nach Bedarf angepasst werden
+#    z.B. "Wohnzimmer Temperatur" statt "Temperatur"
+#
+# 5. Kalibrierung: Falls der Sensor leicht abweicht, nutze die
+#    offset-Filter bei Temperatur und/oder Luftfeuchtigkeit
+#
+# ============================================================================
