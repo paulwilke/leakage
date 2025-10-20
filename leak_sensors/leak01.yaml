@@ -1,0 +1,193 @@
+# ============================================================================
+# ESPHome Konfiguration für Wasserleck-Sensor (Shelly Leak Sensor Cable)
+# Hardware: ESP32/ESP8266 mit einfachem Leak Detection Cable
+# Verwendung: Wasserleck-Erkennung mit Kabel-Sensor
+# ============================================================================
+
+esphome:
+  name: leak01
+  friendly_name: Leak Sensor 01
+
+# ============================================================================
+# ESP32 Konfiguration
+# Alternativ: esp8266 mit board: d1_mini (oder anderen ESP8266 Boards)
+# ============================================================================
+esp32:
+  board: nodemcu-32s
+  framework:
+    type: esp-idf
+
+# ============================================================================
+# Logging
+# ============================================================================
+logger:
+  # level: DEBUG
+
+# ============================================================================
+# Home Assistant API
+# ============================================================================
+api:
+  encryption:
+    key: "xxx"  # API Verschlüsselungsschlüssel - sollte eindeutig sein
+
+# ============================================================================
+# OTA Updates (Over-The-Air)
+# ============================================================================
+ota:
+  - platform: esphome
+    password: "xxx"  # OTA Update Passwort
+
+# ============================================================================
+# WiFi Konfiguration
+# ============================================================================
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+
+  # Optional: Statische IP konfigurieren
+  #manual_ip:
+  #  static_ip: 192.168.1.101       # Feste IP-Adresse des Sensors
+  #  gateway: 192.168.1.1           # Gateway (dein Router)
+  #  subnet: 255.255.255.0          # Subnetzmaske
+
+  # Fallback Access Point bei WiFi-Problemen
+  ap:
+    ssid: "Leak Sensor 01 Fallback"
+    password: "fallback123"
+
+# ============================================================================
+# Captive Portal
+# ============================================================================
+captive_portal:
+
+# ============================================================================
+# Webserver
+# ============================================================================
+web_server:
+  port: 80
+
+# ============================================================================
+# Zeitsynchronisation
+# ============================================================================
+time:
+  - platform: homeassistant
+    id: esptime
+
+# ============================================================================
+# Binärsensoren
+# ============================================================================
+binary_sensor:
+  # --------------------------------------------------------------------------
+  # Wasserleck-Sensor (Shelly Leak Sensor Cable Typ)
+  #
+  # ANSCHLUSS:
+  # -----------
+  # Der Leak Sensor Cable hat 2 Drähte:
+  # 1. Ein Draht wird mit GND verbunden
+  # 2. Der andere Draht wird mit GPIO4 verbunden
+  #
+  # Der ESP32 interne Pullup zieht den Pin auf HIGH.
+  # Wenn das Kabel nass wird, wird der Kontakt geschlossen -> PIN wird LOW.
+  #
+  # VERKABELUNG:
+  # -----------
+  # ESP32 Pin     |  Leak Sensor Cable
+  # --------------|-------------------
+  # GND           |  Draht 1 (schwarz)
+  # GPIO4         |  Draht 2 (rot)
+  #
+  # WICHTIG: Keine externe Verkabelung nötig - der interne Pullup wird genutzt!
+  # --------------------------------------------------------------------------
+  - platform: gpio
+    pin:
+      number: GPIO4           # GPIO Pin für den Leak Sensor
+      mode:
+        input: true           # Pin als Eingang
+        pullup: true          # Interner Pullup aktiviert!
+      inverted: false         # false = LOW bei Nässe (geschlossener Kontakt)
+
+    name: "Wasserleck erkannt"
+    device_class: moisture    # Home Assistant Device Class für Wasserleck
+
+    # Filter um kurze Störungen zu ignorieren (optional aber empfohlen)
+    filters:
+      - delayed_on: 100ms     # Leck wird erst nach 100ms gemeldet
+      - delayed_off: 5s       # Leck-Alarm bleibt mindestens 5s aktiv
+
+    # Aktionen bei Leck-Erkennung (optional)
+    on_press:
+      then:
+        - logger.log: "ALARM! Wasserleck erkannt!"
+
+    on_release:
+      then:
+        - logger.log: "Wasserleck behoben - Sensor wieder trocken"
+
+  # --------------------------------------------------------------------------
+  # Status-Sensor: Zeigt an ob der ESP mit Home Assistant verbunden ist
+  # --------------------------------------------------------------------------
+  - platform: status
+    name: "Status"
+
+# ============================================================================
+# Sensoren für Diagnose (optional)
+# ============================================================================
+sensor:
+  # WiFi Signal Stärke
+  - platform: wifi_signal
+    name: "WiFi Signal"
+    update_interval: 60s
+
+  # Uptime
+  - platform: uptime
+    name: "Uptime"
+    update_interval: 60s
+
+# ============================================================================
+# Text-Sensoren (optional)
+# ============================================================================
+text_sensor:
+  # WiFi-Informationen
+  - platform: wifi_info
+    ip_address:
+      name: "IP Adresse"
+    ssid:
+      name: "SSID"
+    mac_address:
+      name: "MAC Adresse"
+
+# ============================================================================
+# ANLEITUNG:
+#
+# 1. HARDWARE-AUFBAU:
+#    - Verbinde den ersten Draht des Leak Sensor Cables mit GND am ESP32
+#    - Verbinde den zweiten Draht mit GPIO4 am ESP32
+#    - Keine weiteren Komponenten nötig! Der ESP32 nutzt den internen Pullup
+#
+# 2. FUNKTIONSWEISE:
+#    - Im trockenen Zustand: Kontakt offen -> Pin HIGH (durch Pullup)
+#    - Bei Nässe: Kontakt geschlossen -> Pin LOW
+#    - Home Assistant zeigt: "Clear" (trocken) oder "Wet" (nass)
+#
+# 3. ALTERNATIVE PINS:
+#    Wenn GPIO4 bereits belegt ist, kannst du jeden anderen GPIO nutzen:
+#    ESP32: GPIO2, GPIO4, GPIO5, GPIO12-19, GPIO21-23, GPIO25-27, GPIO32-39
+#    ESP8266: GPIO4 (D2), GPIO5 (D1), GPIO12 (D6), GPIO13 (D7), GPIO14 (D5)
+#
+#    NICHT nutzen: GPIO0, GPIO2, GPIO15 (Boot-Pins)
+#
+# 4. TESTEN:
+#    - Schau ins ESPHome Log: esphome logs leak01.yaml
+#    - Verbinde die beiden Drähte des Sensors manuell -> sollte "ALARM!" loggen
+#    - Trenne die Drähte -> sollte "Sensor wieder trocken" loggen
+#
+# 5. SECRETS-DATEI:
+#    Erstelle eine secrets.yaml im gleichen Verzeichnis:
+#    wifi_ssid: "DeinWiFiName"
+#    wifi_password: "DeinWiFiPasswort"
+#
+# 6. FLASHEN:
+#    Erstes Mal per USB:     esphome run leak01.yaml
+#    Spätere Updates (OTA):  esphome run leak01.yaml
+#
+# ============================================================================
