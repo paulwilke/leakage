@@ -1,0 +1,135 @@
+# ============================================================================
+# ESPHome Konfiguration mit CUSTOM DASHBOARD DIREKT AUF ESP32
+# Framework: ESP-IDF (funktioniert auch mit Arduino)
+# Hardware: ESP32 NodeMCU-32S mit SHT4x Sensor
+#
+# DIESES DASHBOARD LÄUFT DIREKT AUF DEM ESP32!
+# Keine externen Dateien nötig, alles embedded!
+# ============================================================================
+
+esphome:
+  name: humidity01
+  friendly_name: Humidity Sensor
+
+  # Includes für Custom Web Handler
+  includes:
+    - humidity_custom_web.h
+
+# ============================================================================
+# ESP32 mit ESP-IDF Framework
+# ============================================================================
+esp32:
+  board: nodemcu-32s
+  framework:
+    type: esp-idf  # ✅ ESP-IDF funktioniert!
+
+# ============================================================================
+# Logging
+# ============================================================================
+logger:
+  level: INFO
+
+# ============================================================================
+# Home Assistant API
+# ============================================================================
+api:
+  encryption:
+    key: "xxx"
+
+# ============================================================================
+# OTA Updates
+# ============================================================================
+ota:
+  - platform: esphome
+    password: "xxx"
+
+# ============================================================================
+# WiFi
+# ============================================================================
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+
+  ap:
+    ssid: "Humidity 1 Fallback"
+    password: "fallback123"
+
+captive_portal:
+
+# ============================================================================
+# Web Server mit Custom Root Handler
+# ============================================================================
+web_server:
+  port: 80
+  version: 2
+
+# Custom Web Server Component
+# Registriert einen Handler für die Root-URL (/)
+# Der Handler liefert unser Custom Dashboard aus
+web_server:
+  port: 80
+  local: true  # Lokales Interface aktivieren
+
+# ============================================================================
+# Zeitsynchronisation
+# ============================================================================
+time:
+  - platform: homeassistant
+    id: esptime
+
+# ============================================================================
+# I2C Bus
+# ============================================================================
+i2c:
+  sda: GPIO21
+  scl: GPIO22
+  scan: true
+
+# ============================================================================
+# Sensoren
+# ============================================================================
+sensor:
+  - platform: sht4x
+    temperature:
+      name: "Temperatur"
+      id: temp_sensor
+    humidity:
+      name: "Luftfeuchtigkeit"
+      id: humidity_sensor
+    update_interval: 60s
+
+  - platform: wifi_signal
+    name: "WiFi Signal"
+    id: wifi_signal
+    update_interval: 60s
+
+  - platform: uptime
+    name: "Uptime"
+    id: uptime_sensor
+    update_interval: 60s
+
+binary_sensor:
+  - platform: status
+    name: "Status"
+
+text_sensor:
+  - platform: wifi_info
+    ip_address:
+      name: "IP Adresse"
+    ssid:
+      name: "SSID"
+    mac_address:
+      name: "MAC Adresse"
+
+# ============================================================================
+# ANLEITUNG:
+#
+# 1. Erstelle eine Datei "humidity_custom_web.h" im gleichen Verzeichnis
+# 2. Die Header-Datei enthält das Custom Dashboard als C++ String
+# 3. Flash die Firmware: esphome run humidity01_embedded.yaml
+# 4. Öffne http://<esp32-ip>/ - Custom Dashboard erscheint!
+#
+# Das Dashboard ist jetzt DIREKT auf dem ESP32 gespeichert!
+# Kein externes HTML nötig, alles embedded im Flash!
+#
+# ============================================================================
