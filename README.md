@@ -6,16 +6,19 @@ Dieses Repository enthält ESPHome-Konfigurationen für verschiedene Sensoren.
 
 ```
 .
-├── humidity_sensors/       # Temperatur- und Luftfeuchtigkeitssensoren
-│   └── humidity01.yaml    # SHT4x Sensor mit ESP32
-├── leak_sensors/          # Wasserleck-Sensoren
-│   └── leak01.yaml        # Leak Sensor Cable mit ESP32
-├── web_dashboard/         # 📊 Professionelles Web-Dashboard
-│   ├── index.html         # Haupt-Dashboard
-│   ├── css/               # Styles
-│   ├── js/                # JavaScript & Konfiguration
-│   └── README.md          # Dashboard-Dokumentation
-└── secrets.yaml           # WiFi-Zugangsdaten (nicht im Git!)
+├── humidity_sensors/        # Temperatur- und Luftfeuchtigkeitssensoren
+│   └── humidity01.yaml     # SHT4x Sensor mit ESP32
+├── leak_sensors/           # Wasserleck-Sensoren
+│   └── leak01.yaml         # Leak Sensor Cable mit ESP32
+├── esp32_webinterface/     # 🖥️ Kompakte Dashboards FÜR ESP32
+│   ├── humidity_dashboard.html  # Läuft AUF dem ESP32
+│   ├── leak_dashboard.html      # Läuft AUF dem ESP32
+│   └── README.md           # Detaillierte Anleitung
+├── web_dashboard_external/ # 📊 Externes Dashboard (PC/Raspberry Pi)
+│   ├── index.html          # Zentrale Überwachung ALLER Sensoren
+│   ├── css/, js/           # Komplexes Dashboard mit Charts
+│   └── README.md           # Dokumentation
+└── secrets.yaml            # WiFi-Zugangsdaten (nicht im Git!)
 ```
 
 ## Erste Schritte
@@ -203,69 +206,114 @@ Nach dem ersten Flash werden die Sensoren automatisch in Home Assistant erkannt 
 
 ---
 
-## 📊 Professionelles Web-Dashboard
+## 🖥️ Web-Dashboards - Zwei Optionen!
 
-Zusätzlich zum ESPHome-Webserver und Home Assistant gibt es jetzt ein **modernes, professionelles Web-Dashboard** zur Überwachung aller Sensoren!
+Du hast die Wahl zwischen zwei professionellen Dashboard-Lösungen:
 
-### Features
+### Option 1: ESP32-Webinterface ⭐ EMPFOHLEN
 
-- 🎨 **Modernes Dark-Theme UI** mit responsivem Design
-- 📈 **Echtzeit-Charts** für Temperatur und Luftfeuchtigkeit (24h Historie)
-- 🚨 **Intelligentes Alarm-System** mit konfigurierbaren Schwellenwerten
-- 📱 **Mobile-First Design** - funktioniert auf allen Geräten
-- 🔔 **Browser-Benachrichtigungen** bei Alarmen
-- ⚡ **Live-Updates** alle 5 Sekunden
-- 📊 **Datenvisualisierung** mit Chart.js
-- 🏠 **Home Assistant Integration** (optional)
+**Kompakte Dashboards die DIREKT auf dem ESP32 laufen!**
 
-### Schnellstart
-
-```bash
-# Dashboard im Browser öffnen
-cd web_dashboard
-python3 -m http.server 8080
-
-# Dann im Browser öffnen:
-# http://localhost:8080
+```
+📍 Verzeichnis: esp32_webinterface/
 ```
 
-### Konfiguration
+**Features:**
+- ✅ Läuft **direkt auf dem ESP32** (kein extra Server nötig!)
+- ✅ Ultra-kompakt (~5KB)
+- ✅ Modernes Dark-Theme Design
+- ✅ Auto-Refresh alle 5 Sekunden
+- ✅ Mobile-optimiert
+- ✅ Keine externen Abhängigkeiten
 
-1. Bearbeite `web_dashboard/js/config.js`
-2. Trage die IP-Adressen deiner Sensoren ein:
+**Schnellstart:**
 
+1. **Standard-Interface nutzen:**
+   ```
+   http://<esp32-ip>/
+   ```
+   ✅ Funktioniert sofort, kein Setup!
+
+2. **Custom Dashboard hochladen:**
+   ```bash
+   # Dashboard lokal öffnen
+   open esp32_webinterface/humidity_dashboard.html
+
+   # Oder auf ESP32 hochladen (siehe README)
+   ```
+
+3. **Detaillierte Anleitung:**
+   → [esp32_webinterface/README.md](esp32_webinterface/README.md)
+
+**Ideal für:**
+- ✅ Einzelne Sensoren
+- ✅ Einfache Überwachung
+- ✅ Kein extra Server verfügbar
+
+---
+
+### Option 2: Externes Dashboard (PC/Raspberry Pi)
+
+**Zentrales Dashboard zur Überwachung ALLER Sensoren mit Charts!**
+
+```
+📍 Verzeichnis: web_dashboard_external/
+```
+
+**Features:**
+- 📊 **Zentrale Überwachung** aller Sensoren
+- 📈 **Interaktive Charts** mit 24h-Historie
+- 🚨 **Alarm-System** mit Browser-Benachrichtigungen
+- 🏠 **Home Assistant Integration**
+- 📱 **Responsive Design** für alle Geräte
+
+**Schnellstart:**
+
+```bash
+cd web_dashboard_external
+python3 -m http.server 8080
+
+# Im Browser: http://localhost:8080
+```
+
+**Konfiguration in `js/config.js`:**
 ```javascript
 sensors: {
     humidity: [
-        {
-            id: 'humidity01',
-            name: 'Humidity Sensor 01',
-            host: '192.168.1.100',  // IP-Adresse anpassen
-            port: 80,
-        }
+        { id: 'humidity01', host: '192.168.1.100', port: 80 }
     ],
     leak: [
-        {
-            id: 'leak01',
-            name: 'Leak Sensor 01',
-            host: '192.168.1.101',  // IP-Adresse anpassen
-            port: 80,
-        }
+        { id: 'leak01', host: '192.168.1.101', port: 80 }
     ]
 }
 ```
 
-3. Dashboard öffnen und genießen! 🎉
+**Detaillierte Anleitung:**
+→ [web_dashboard_external/README.md](web_dashboard_external/README.md)
 
-### Detaillierte Dokumentation
+**Ideal für:**
+- ✅ Mehrere Sensoren zentral überwachen
+- ✅ Charts und Historie wichtig
+- ✅ PC/Raspberry Pi vorhanden
 
-Ausführliche Informationen findest du im [Web-Dashboard README](web_dashboard/README.md):
-- Installation und Setup
-- Konfiguration
-- Home Assistant Integration
-- Demo-Modus
-- Troubleshooting
-- und vieles mehr...
+---
+
+### Vergleich der Optionen
+
+| Feature | ESP32-Interface | Externes Dashboard |
+|---------|----------------|-------------------|
+| **Läuft auf** | Direkt auf ESP32 | PC/Server/Raspberry Pi |
+| **Setup** | ✅ Minimal | ⚠️ Etwas Aufwand |
+| **Charts** | ❌ Nein | ✅ Ja (24h Historie) |
+| **Mehrere Sensoren** | ❌ Nein (nur einer) | ✅ Ja (alle zentral) |
+| **Größe** | ✅ ~5KB | ⚠️ ~500KB |
+| **Extra Server nötig** | ✅ Nein | ❌ Ja |
+| **Mobile** | ✅ Ja | ✅ Ja |
+
+**Empfehlung:**
+- Für die meisten Nutzer → **Option 1 (ESP32-Interface)**
+- Für Power-User mit vielen Sensoren → **Option 2 (Externes Dashboard)**
+- Oder beides kombinieren! 🎉
 
 ---
 

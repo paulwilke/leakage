@@ -1,8 +1,26 @@
-# ESPHome Sensor Dashboard - Professionelles Webinterface
+# ESPHome Sensor Dashboard - Externes Webinterface
 
 Ein modernes, professionelles Web-Dashboard zur Überwachung und Visualisierung von ESPHome-Sensoren in Echtzeit.
 
+> ⚠️ **WICHTIG:** Dieses Dashboard läuft **NICHT** auf dem ESP32, sondern auf einem **separaten Computer/Server** (PC, Laptop, Raspberry Pi, etc.) und verbindet sich zu den ESP32-Sensoren.
+>
+> **Suchst du ein Dashboard direkt auf dem ESP32?** → Siehe [esp32_webinterface](../esp32_webinterface/README.md)
+
 ![Dashboard Preview](assets/dashboard-preview.png)
+
+## Unterschied zu ESP32-Interface
+
+| Feature | Dieses (Externes Dashboard) | ESP32-Interface |
+|---------|----------------------------|-----------------|
+| Läuft auf | PC/Server/Raspberry Pi | Direkt auf ESP32 |
+| Zeigt an | ALLE Sensoren | Einen Sensor |
+| Charts | ✅ Ja (Chart.js) | ❌ Nein (zu groß) |
+| Voraussetzung | Separater Computer | Nur ESP32 |
+| Komplexität | Hoch | Einfach |
+
+**Empfehlung:**
+- Für **einzelne Sensoren** → [ESP32-Interface](../esp32_webinterface/README.md)
+- Für **zentrale Überwachung vieler Sensoren** → Dieses externe Dashboard
 
 ## Features
 
