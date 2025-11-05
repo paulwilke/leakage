@@ -2,9 +2,18 @@
 
 Moderne, kompakte Dashboards die **direkt auf dem ESP32** laufen!
 
+## ✅ Framework Support
+
+**Die Dashboards funktionieren mit BEIDEN Frameworks:**
+- ✅ **ESP-IDF** (empfohlen - stabiler)
+- ✅ **Arduino** (mehr Upload-Optionen)
+
+> 📖 **ESP-IDF Nutzer:** Siehe [ESP-IDF_ANLEITUNG.md](ESP-IDF_ANLEITUNG.md) für spezifische Anleitung!
+
 ## 📊 Features
 
 - ✅ **Ultra-kompakt** - Nur ~5KB pro Dashboard
+- ✅ **ESP-IDF & Arduino** - Funktioniert mit beiden Frameworks
 - ✅ **Embedded-optimiert** - Kein externes CDN, alles inline
 - ✅ **Modernes Design** - Dark Theme, responsive
 - ✅ **Auto-Refresh** - Aktualisiert sich alle 5 Sekunden
@@ -83,9 +92,13 @@ Das ist das Standard-ESPHome-Interface. Funktioniert sofort, ist aber basic.
 
 ---
 
-### Option 3: Dashboard auf ESP32 hochladen (Professionell) ⭐ EMPFOHLEN
+### Option 3: Dashboard auf ESP32 hochladen (Nur Arduino Framework)
+
+⚠️ **Nur für Arduino Framework!** ESP-IDF Nutzer verwenden Option 1 oder 2.
 
 Upload das Dashboard direkt auf den ESP32! Dann ist es unter der ESP32-IP erreichbar.
+
+> 📖 **ESP-IDF Nutzer:** Diese Option funktioniert nur mit Arduino Framework. Nutze stattdessen **Option 1** (Standard-Interface) oder **Option 2** (Dashboard extern öffnen). Siehe [ESP-IDF_ANLEITUNG.md](ESP-IDF_ANLEITUNG.md)
 
 #### Schritt 1: LittleFS in ESPHome aktivieren
 
@@ -97,7 +110,7 @@ Füge zu deiner YAML-Datei hinzu:
 esp32:
   board: nodemcu-32s
   framework:
-    type: arduino  # WICHTIG: Arduino Framework nutzen (nicht esp-idf)
+    type: arduino  # WICHTIG: Nur Arduino unterstützt LittleFS!
 
 # LittleFS Filesystem
 esp32_improv:

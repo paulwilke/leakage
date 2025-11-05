@@ -1,0 +1,170 @@
+# ============================================================================
+# ESPHome Konfiguration für Humidity/Temperature Sensor
+# Hardware: ESP32 NodeMCU-32S mit SHT4x Sensor
+# Verwendung: Temperatur- und Luftfeuchtigkeitsmessung
+# MIT CUSTOM WEBINTERFACE für ESP-IDF Framework
+# ============================================================================
+
+esphome:
+  name: humidity01
+  friendly_name: Humidity Sensor
+
+# ============================================================================
+# ESP32 Konfiguration mit ESP-IDF
+# ============================================================================
+esp32:
+  board: nodemcu-32s
+  framework:
+    type: esp-idf  # ESP-IDF Framework
+
+# ============================================================================
+# Logging
+# ============================================================================
+logger:
+  # level: DEBUG
+
+# ============================================================================
+# Home Assistant API
+# ============================================================================
+api:
+  encryption:
+    key: "xxx"  # API Verschlüsselungsschlüssel - sollte eindeutig sein
+
+# ============================================================================
+# OTA Updates
+# ============================================================================
+ota:
+  - platform: esphome
+    password: "xxx"  # OTA Update Passwort
+
+# ============================================================================
+# WiFi Konfiguration
+# ============================================================================
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+
+  # Optional: Statische IP konfigurieren
+  #manual_ip:
+  #  static_ip: 192.168.1.100
+  #  gateway: 192.168.1.1
+  #  subnet: 255.255.255.0
+
+  # Fallback Access Point
+  ap:
+    ssid: "Humidity 1 Fallback Hotspot"
+    password: "bvJU6UGN6jIc"
+
+# ============================================================================
+# Captive Portal
+# ============================================================================
+captive_portal:
+
+# ============================================================================
+# Webserver mit Custom Dashboard
+# ============================================================================
+web_server:
+  port: 80
+  version: 2  # Version 2 unterstützt ESP-IDF besser
+  # Custom CSS/JS funktioniert mit Version 2
+  css_url: ""
+  js_url: ""
+
+# ============================================================================
+# Zeitsynchronisation
+# ============================================================================
+time:
+  - platform: homeassistant
+    id: esptime
+
+# ============================================================================
+# I2C Bus Konfiguration
+# ============================================================================
+i2c:
+  sda: GPIO21
+  scl: GPIO22
+  scan: true
+
+# ============================================================================
+# Sensoren
+# ============================================================================
+sensor:
+  # --------------------------------------------------------------------------
+  # SHT4x Temperatur- und Luftfeuchtigkeitssensor
+  # --------------------------------------------------------------------------
+  - platform: sht4x
+    temperature:
+      name: "Temperatur"
+      id: temperatur
+    humidity:
+      name: "Luftfeuchtigkeit"
+      id: luftfeuchtigkeit
+    update_interval: 60s
+
+  # --------------------------------------------------------------------------
+  # WiFi Signal Stärke
+  # --------------------------------------------------------------------------
+  - platform: wifi_signal
+    name: "WiFi Signal"
+    id: wifi_signal
+    update_interval: 60s
+
+  # --------------------------------------------------------------------------
+  # Uptime Sensor
+  # --------------------------------------------------------------------------
+  - platform: uptime
+    name: "Uptime"
+    id: uptime_sensor
+    update_interval: 60s
+
+# ============================================================================
+# Binärsensoren
+# ============================================================================
+binary_sensor:
+  - platform: status
+    name: "Status"
+
+# ============================================================================
+# Text-Sensoren
+# ============================================================================
+text_sensor:
+  - platform: wifi_info
+    ip_address:
+      name: "IP Adresse"
+      id: ip_address
+    ssid:
+      name: "SSID"
+      id: wifi_ssid
+    mac_address:
+      name: "MAC Adresse"
+      id: mac_address
+
+# ============================================================================
+# ANLEITUNG FÜR CUSTOM DASHBOARD MIT ESP-IDF:
+#
+# Das ESPHome Web Server Version 2 funktioniert perfekt mit ESP-IDF!
+#
+# Für Custom Dashboard hast du 3 Optionen:
+#
+# 1. STANDARD-INTERFACE (Empfohlen für ESP-IDF):
+#    - Einfach http://<esp32-ip>/ öffnen
+#    - Funktioniert out-of-the-box mit ESP-IDF
+#    - Zeigt alle Sensoren an
+#
+# 2. EXTERNES CUSTOM DASHBOARD:
+#    - Öffne esp32_webinterface/humidity_dashboard.html lokal
+#    - Greift via JSON API auf Sensordaten zu
+#    - Funktioniert mit ESP-IDF (nutzt /sensor und /text_sensor API)
+#    - Keine Änderungen an der YAML nötig
+#
+# 3. DASHBOARD AUF EXTERNEM SERVER:
+#    - Hoste das Dashboard auf einem Webserver/Raspberry Pi
+#    - Greift per CORS auf ESP32 zu
+#    - Beste Lösung für mehrere Sensoren
+#
+# Die JSON API Endpoints funktionieren mit ESP-IDF:
+# - http://<esp32-ip>/sensor          (alle Sensoren)
+# - http://<esp32-ip>/text_sensor     (Text-Sensoren)
+# - http://<esp32-ip>/binary_sensor   (Binär-Sensoren)
+#
+# ============================================================================
