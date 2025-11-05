@@ -10,6 +10,11 @@ Dieses Repository enthält ESPHome-Konfigurationen für verschiedene Sensoren.
 │   └── humidity01.yaml    # SHT4x Sensor mit ESP32
 ├── leak_sensors/          # Wasserleck-Sensoren
 │   └── leak01.yaml        # Leak Sensor Cable mit ESP32
+├── web_dashboard/         # 📊 Professionelles Web-Dashboard
+│   ├── index.html         # Haupt-Dashboard
+│   ├── css/               # Styles
+│   ├── js/                # JavaScript & Konfiguration
+│   └── README.md          # Dashboard-Dokumentation
 └── secrets.yaml           # WiFi-Zugangsdaten (nicht im Git!)
 ```
 
@@ -195,6 +200,74 @@ Nach dem ersten Flash werden die Sensoren automatisch in Home Assistant erkannt 
 1. Gehe zu **Einstellungen** → **Geräte & Dienste**
 2. ESPHome sollte die neuen Sensoren anzeigen
 3. Klicke auf **Konfigurieren** und gib den API-Key ein
+
+---
+
+## 📊 Professionelles Web-Dashboard
+
+Zusätzlich zum ESPHome-Webserver und Home Assistant gibt es jetzt ein **modernes, professionelles Web-Dashboard** zur Überwachung aller Sensoren!
+
+### Features
+
+- 🎨 **Modernes Dark-Theme UI** mit responsivem Design
+- 📈 **Echtzeit-Charts** für Temperatur und Luftfeuchtigkeit (24h Historie)
+- 🚨 **Intelligentes Alarm-System** mit konfigurierbaren Schwellenwerten
+- 📱 **Mobile-First Design** - funktioniert auf allen Geräten
+- 🔔 **Browser-Benachrichtigungen** bei Alarmen
+- ⚡ **Live-Updates** alle 5 Sekunden
+- 📊 **Datenvisualisierung** mit Chart.js
+- 🏠 **Home Assistant Integration** (optional)
+
+### Schnellstart
+
+```bash
+# Dashboard im Browser öffnen
+cd web_dashboard
+python3 -m http.server 8080
+
+# Dann im Browser öffnen:
+# http://localhost:8080
+```
+
+### Konfiguration
+
+1. Bearbeite `web_dashboard/js/config.js`
+2. Trage die IP-Adressen deiner Sensoren ein:
+
+```javascript
+sensors: {
+    humidity: [
+        {
+            id: 'humidity01',
+            name: 'Humidity Sensor 01',
+            host: '192.168.1.100',  // IP-Adresse anpassen
+            port: 80,
+        }
+    ],
+    leak: [
+        {
+            id: 'leak01',
+            name: 'Leak Sensor 01',
+            host: '192.168.1.101',  // IP-Adresse anpassen
+            port: 80,
+        }
+    ]
+}
+```
+
+3. Dashboard öffnen und genießen! 🎉
+
+### Detaillierte Dokumentation
+
+Ausführliche Informationen findest du im [Web-Dashboard README](web_dashboard/README.md):
+- Installation und Setup
+- Konfiguration
+- Home Assistant Integration
+- Demo-Modus
+- Troubleshooting
+- und vieles mehr...
+
+---
 
 ## Weitere Informationen
 
