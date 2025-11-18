@@ -11,9 +11,13 @@ Dieses Repository enthält ESPHome-Konfigurationen für verschiedene Sensoren.
 ├── leak_sensors/           # Wasserleck-Sensoren
 │   └── leak01.yaml         # Leak Sensor Cable mit ESP32
 ├── esp32_webinterface/     # 🖥️ Kompakte Dashboards FÜR ESP32
-│   ├── humidity_dashboard.html  # Läuft AUF dem ESP32
-│   ├── leak_dashboard.html      # Läuft AUF dem ESP32
-│   └── README.md           # Detaillierte Anleitung
+│   ├── humidity_dashboard.html  # Läuft AUF dem ESP32 (kompakt)
+│   ├── leak_dashboard.html      # Läuft AUF dem ESP32 (kompakt)
+│   ├── humidity_webapp.html     # 🌟 NEU: Professional Webapp mit Charts
+│   ├── leak_webapp.html         # 🌟 NEU: Professional Webapp mit Event-Log
+│   ├── README_WEBAPP.md         # Webapp-Dokumentation
+│   ├── API_DOCUMENTATION.md     # JSON API Dokumentation
+│   └── README.md                # Detaillierte Anleitung
 ├── web_dashboard_external/ # 📊 Externes Dashboard (PC/Raspberry Pi)
 │   ├── index.html          # Zentrale Überwachung ALLER Sensoren
 │   ├── css/, js/           # Komplexes Dashboard mit Charts
@@ -206,16 +210,80 @@ Nach dem ersten Flash werden die Sensoren automatisch in Home Assistant erkannt 
 
 ---
 
-## 🖥️ Web-Dashboards - Zwei Optionen!
+## 🖥️ Web-Dashboards - Drei Optionen!
 
-Du hast die Wahl zwischen zwei professionellen Dashboard-Lösungen:
+Du hast die Wahl zwischen drei professionellen Dashboard-Lösungen:
 
-### Option 1: ESP32-Webinterface ⭐ EMPFOHLEN
+### Option 1: Professional Webserver Frontend 🌟 NEU & EMPFOHLEN
 
-**Kompakte Dashboards die DIREKT auf dem ESP32 laufen!**
+**Moderne Single-Page-Applications mit Charts, JSON API und professionellem Design!**
 
 ```
 📍 Verzeichnis: esp32_webinterface/
+📄 Dateien: humidity_webapp.html, leak_webapp.html
+```
+
+**Features:**
+- ✅ **Professional UI/UX** mit modernem Dark-Theme
+- 📊 **Interactive Charts** mit Chart.js (Humidity: Verlaufsdiagramm)
+- 🔄 **Auto-Refresh** mit Pause/Resume-Funktion
+- 📱 **Fully Responsive** - perfekt auf Mobile, Tablet, Desktop
+- 💾 **Data Export** - JSON-Export aller Daten
+- 🚨 **Event Logging** (Leak Sensor) mit localStorage
+- 🔔 **Browser Notifications** bei Leck-Erkennung
+- 📡 **JSON REST API** - vollständige API-Dokumentation
+- 📈 **Trend Indicators** - Pfeile für steigende/fallende Werte
+- ⚙️ **Configurable** - einfach anpassbar
+
+**Schnellstart:**
+
+1. **Lokal öffnen:**
+   ```bash
+   cd esp32_webinterface/
+
+   # Python Web Server
+   python3 -m http.server 8000
+
+   # Im Browser öffnen:
+   # Humidity: http://localhost:8000/humidity_webapp.html
+   # Leak:     http://localhost:8000/leak_webapp.html
+   ```
+
+2. **Oder direkt im Browser:**
+   ```bash
+   # Die HTML-Dateien direkt öffnen
+   open humidity_webapp.html
+   open leak_webapp.html
+   ```
+
+3. **JSON API nutzen:**
+   ```bash
+   # API testen
+   curl http://192.168.1.100/sensor | jq
+   curl http://192.168.1.100/text_sensor | jq
+   curl http://192.168.1.100/binary_sensor | jq
+   ```
+
+**Dokumentation:**
+- 📖 [README_WEBAPP.md](esp32_webinterface/README_WEBAPP.md) - Vollständige Anleitung
+- 📡 [API_DOCUMENTATION.md](esp32_webinterface/API_DOCUMENTATION.md) - JSON API Docs
+
+**Ideal für:**
+- ✅ **Professional monitoring** mit modernem Design
+- ✅ **Data visualization** mit Charts
+- ✅ **Event tracking** und Logging
+- ✅ **API integration** in eigene Projekte
+- ✅ **Development** und Customization
+
+---
+
+### Option 2: Kompakte ESP32-Dashboards
+
+**Ultra-kompakte Dashboards (~5KB) die DIREKT auf dem ESP32 laufen!**
+
+```
+📍 Verzeichnis: esp32_webinterface/
+📄 Dateien: humidity_dashboard.html, leak_dashboard.html
 ```
 
 **Features:**
@@ -224,7 +292,7 @@ Du hast die Wahl zwischen zwei professionellen Dashboard-Lösungen:
 - ✅ Modernes Dark-Theme Design
 - ✅ Auto-Refresh alle 5 Sekunden
 - ✅ Mobile-optimiert
-- ✅ Keine externen Abhängigkeiten
+- ✅ Keine externen Abhängigkeiten (kein CDN)
 
 **Schnellstart:**
 
@@ -247,12 +315,12 @@ Du hast die Wahl zwischen zwei professionellen Dashboard-Lösungen:
 
 **Ideal für:**
 - ✅ Einzelne Sensoren
-- ✅ Einfache Überwachung
+- ✅ Minimaler Footprint
 - ✅ Kein extra Server verfügbar
 
 ---
 
-### Option 2: Externes Dashboard (PC/Raspberry Pi)
+### Option 3: Externes Dashboard (PC/Raspberry Pi)
 
 **Zentrales Dashboard zur Überwachung ALLER Sensoren mit Charts!**
 
@@ -300,20 +368,25 @@ sensors: {
 
 ### Vergleich der Optionen
 
-| Feature | ESP32-Interface | Externes Dashboard |
-|---------|----------------|-------------------|
-| **Läuft auf** | Direkt auf ESP32 | PC/Server/Raspberry Pi |
-| **Setup** | ✅ Minimal | ⚠️ Etwas Aufwand |
-| **Charts** | ❌ Nein | ✅ Ja (24h Historie) |
-| **Mehrere Sensoren** | ❌ Nein (nur einer) | ✅ Ja (alle zentral) |
-| **Größe** | ✅ ~5KB | ⚠️ ~500KB |
-| **Extra Server nötig** | ✅ Nein | ❌ Ja |
-| **Mobile** | ✅ Ja | ✅ Ja |
+| Feature | Professional Webapp | Kompakt-Dashboard | Externes Dashboard |
+|---------|-------------------|------------------|-------------------|
+| **Läuft auf** | PC/Server (empfohlen) | Direkt auf ESP32 | PC/Server/Raspberry Pi |
+| **Setup** | ✅ Minimal (Web Server) | ✅ Minimal | ⚠️ Etwas Aufwand |
+| **Charts** | ✅ Ja (Chart.js) | ❌ Nein | ✅ Ja (24h Historie) |
+| **Event Logging** | ✅ Ja (localStorage) | ❌ Nein | ✅ Ja |
+| **Mehrere Sensoren** | ⚠️ Einer pro Seite | ❌ Nein (nur einer) | ✅ Ja (alle zentral) |
+| **Größe** | ⚠️ ~25-30KB | ✅ ~5KB | ⚠️ ~500KB |
+| **JSON API** | ✅ Voll dokumentiert | ✅ Verwendet API | ✅ Verwendet API |
+| **Data Export** | ✅ Ja | ❌ Nein | ❌ Nein |
+| **Notifications** | ✅ Browser Alerts | ❌ Nein | ✅ Ja |
+| **Mobile** | ✅ Fully Responsive | ✅ Ja | ✅ Ja |
+| **Customization** | ✅ Sehr einfach | ⚠️ Begrenzt | ⚠️ Moderat |
 
 **Empfehlung:**
-- Für die meisten Nutzer → **Option 1 (ESP32-Interface)**
-- Für Power-User mit vielen Sensoren → **Option 2 (Externes Dashboard)**
-- Oder beides kombinieren! 🎉
+- Für **professionelles Monitoring** → **Option 1 (Professional Webapp)** 🌟
+- Für **minimalen Footprint** → **Option 2 (Kompakt-Dashboard)**
+- Für **zentrale Überwachung vieler Sensoren** → **Option 3 (Externes Dashboard)**
+- Oder **alle kombinieren** für maximale Flexibilität! 🎉
 
 ---
 
