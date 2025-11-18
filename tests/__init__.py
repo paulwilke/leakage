@@ -1,0 +1,2 @@
+# Tests für ESPHome Sensoren
+

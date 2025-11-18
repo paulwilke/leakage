@@ -1,21 +1,32 @@
 # ============================================================================
 # ESPHome Konfiguration für Wasserleck-Sensor (Shelly Leak Sensor Cable)
-# Hardware: ESP32/ESP8266 mit einfachem Leak Detection Cable
+# Hardware: ESP32 mit einfachem Leak Detection Cable
 # Verwendung: Wasserleck-Erkennung mit Kabel-Sensor
+# Webserver: Direkt vom ESP32 ausgeliefert (ESP-IDF)
 # ============================================================================
 
 esphome:
   name: leak01
   friendly_name: Leak Sensor 01
+  # Custom Component für ESP-IDF Webserver mit eingebetteter HTML
+  includes:
+    - custom_components/idf_webserver.h
+  on_boot:
+    priority: -100  # Nach allen anderen Components
+    then:
+      - lambda: |-
+          static IDFWebServer* web_server = new IDFWebServer();
+          web_server->setup();
 
 # ============================================================================
 # ESP32 Konfiguration
-# Alternativ: esp8266 mit board: d1_mini (oder anderen ESP8266 Boards)
+# ESP-IDF Framework für nativen Webserver Support
 # ============================================================================
 esp32:
   board: nodemcu-32s
   framework:
     type: esp-idf
+    version: recommended
 
 # ============================================================================
 # Logging
@@ -38,17 +49,17 @@ ota:
     password: !secret ota_password  # OTA Update Passwort
 
 # ============================================================================
-# WiFi Konfiguration
+# WiFi Konfiguration mit statischer IP
 # ============================================================================
 wifi:
   ssid: !secret wifi_ssid
   password: !secret wifi_password
 
-  # Optional: Statische IP konfigurieren
-  #manual_ip:
-  #  static_ip: 192.168.1.101       # Feste IP-Adresse des Sensors
-  #  gateway: 192.168.1.1           # Gateway (dein Router)
-  #  subnet: 255.255.255.0          # Subnetzmaske
+  # Statische IP-Konfiguration
+  manual_ip:
+    static_ip: 10.10.50.91
+    gateway: 10.10.50.1
+    subnet: 255.255.255.0
 
   # Fallback Access Point bei WiFi-Problemen
   ap:
@@ -60,11 +71,7 @@ wifi:
 # ============================================================================
 captive_portal:
 
-# ============================================================================
-# Webserver
-# ============================================================================
-web_server:
-  port: 80
+# HINWEIS: Kein ESPHome web_server - wir nutzen die Custom IDF Component!
 
 # ============================================================================
 # Zeitsynchronisation
@@ -78,47 +85,42 @@ time:
 # ============================================================================
 binary_sensor:
   # --------------------------------------------------------------------------
-  # Wasserleck-Sensor (Shelly Leak Sensor Cable Typ)
+  # Wasserleck-Sensor (wie in original.yaml - FUNKTIONIERT!)
   #
   # ANSCHLUSS:
-  # -----------
-  # Der Leak Sensor Cable hat 2 Drähte:
-  # 1. Ein Draht wird mit GND verbunden
-  # 2. Der andere Draht wird mit GPIO4 verbunden
-  #
-  # Der ESP32 interne Pullup zieht den Pin auf HIGH.
-  # Wenn das Kabel nass wird, wird der Kontakt geschlossen -> PIN wird LOW.
-  #
-  # VERKABELUNG:
   # -----------
   # ESP32 Pin     |  Leak Sensor Cable
   # --------------|-------------------
   # GND           |  Draht 1 (schwarz)
   # GPIO4         |  Draht 2 (rot)
   #
-  # WICHTIG: Keine externe Verkabelung nötig - der interne Pullup wird genutzt!
+  # WICHTIG: inverted: true bedeutet:
+  # - Trocken (Kontakt offen): Pin HIGH -> Sensor meldet FALSE (kein Leck)
+  # - Nass (Kontakt geschlossen): Pin LOW -> Sensor meldet TRUE (Leck!)
   # --------------------------------------------------------------------------
   - platform: gpio
     pin:
-      number: GPIO4           # GPIO Pin für den Leak Sensor
+      number: GPIO4
       mode:
-        input: true           # Pin als Eingang
-        pullup: true          # Interner Pullup aktiviert!
-      inverted: false         # false = LOW bei Nässe (geschlossener Kontakt)
-
+        input: true
+        pullup: true
+      inverted: true          # WICHTIG: true für korrekte Leck-Erkennung!
+    
     name: "Wasserleck erkannt"
-    device_class: moisture    # Home Assistant Device Class für Wasserleck
-
-    # Filter um kurze Störungen zu ignorieren (optional aber empfohlen)
+    id: water_leak
+    device_class: moisture
+    
+    # Filter um Fehlalarme zu vermeiden
     filters:
-      - delayed_on: 100ms     # Leck wird erst nach 100ms gemeldet
-      - delayed_off: 5s       # Leck-Alarm bleibt mindestens 5s aktiv
-
-    # Aktionen bei Leck-Erkennung (optional)
+      - delayed_on: 100ms
+      - delayed_off: 5s
+    
+    # Aktion bei Leck-Erkennung
     on_press:
       then:
         - logger.log: "ALARM! Wasserleck erkannt!"
-
+    
+    # Aktion wenn Sensor wieder trocken
     on_release:
       then:
         - logger.log: "Wasserleck behoben - Sensor wieder trocken"
@@ -128,6 +130,7 @@ binary_sensor:
   # --------------------------------------------------------------------------
   - platform: status
     name: "Status"
+    id: device_status_sensor
 
 # ============================================================================
 # Sensoren für Diagnose (optional)
@@ -136,11 +139,13 @@ sensor:
   # WiFi Signal Stärke
   - platform: wifi_signal
     name: "WiFi Signal"
+    id: wifi_signal_sensor
     update_interval: 60s
 
   # Uptime
   - platform: uptime
     name: "Uptime"
+    id: uptime_sensor
     update_interval: 60s
 
 # ============================================================================
@@ -151,10 +156,13 @@ text_sensor:
   - platform: wifi_info
     ip_address:
       name: "IP Adresse"
+      id: ip_address
     ssid:
       name: "SSID"
+      id: ssid
     mac_address:
       name: "MAC Adresse"
+      id: mac_address
 
 # ============================================================================
 # ANLEITUNG:

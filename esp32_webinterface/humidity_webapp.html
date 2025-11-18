@@ -521,10 +521,12 @@
         const CONFIG = {
             refreshInterval: 5000,
             maxDataPoints: 20,
+            // ESP32 IP-Adresse - HIER ANPASSEN falls dein ESP32 eine andere IP hat!
+            esp32Host: 'http://10.10.50.91',
             apiEndpoints: {
-                sensor: '/sensor',
-                textSensor: '/text_sensor',
-                binarySensor: '/binary_sensor'
+                sensor: 'http://10.10.50.91/sensor',
+                textSensor: 'http://10.10.50.91/text_sensor',
+                binarySensor: 'http://10.10.50.91/binary_sensor'
             }
         };
 
