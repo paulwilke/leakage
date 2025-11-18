@@ -13,11 +13,20 @@ esphome:
     - custom_components/config_storage.h
     - custom_components/idf_webserver.h
   on_boot:
-    priority: -100  # Nach allen anderen Components
+    # Optimiert: Priority -10 statt -100 für schnelleren Webserver-Start
+    # Webserver muss nur nach WiFi starten (WiFi hat priority 250)
+    priority: -10
     then:
       - lambda: |-
+          // Hardware Watchdog aktivieren für Langzeitbetrieb
+          esp_task_wdt_init(30, true);  // 30 Sekunden Timeout, Panic bei Timeout
+          esp_task_wdt_add(NULL);  // Füge aktuellen Task hinzu
+
+          // Starte Webserver
           static IDFWebServer* web_server = new IDFWebServer();
           web_server->setup();
+
+          ESP_LOGI("startup", "System initialized - Watchdog active");
 
 # ============================================================================
 # ESP32 Konfiguration
@@ -162,6 +171,18 @@ sensor:
     name: "Uptime"
     id: uptime_sensor
     update_interval: 60s
+
+  # Heap Memory Monitoring (für Langzeitbetrieb-Diagnose)
+  - platform: template
+    name: "Free Heap"
+    id: free_heap_sensor
+    unit_of_measurement: "bytes"
+    accuracy_decimals: 0
+    update_interval: 60s
+    lambda: |-
+      // Feed Watchdog periodisch
+      esp_task_wdt_reset();
+      return esp_get_free_heap_size();
 
 # ============================================================================
 # Text-Sensoren (optional)
