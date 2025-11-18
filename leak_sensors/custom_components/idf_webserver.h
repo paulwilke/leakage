@@ -17,6 +17,8 @@ class IDFWebServer {
   // Session management
   std::map<std::string, time_t> active_sessions;  // session_id -> expiry_time
   static constexpr uint32_t SESSION_TIMEOUT = 3600;  // 1 hour
+  time_t last_session_cleanup = 0;
+  static constexpr uint32_t SESSION_CLEANUP_INTERVAL = 300;  // Cleanup every 5 minutes
 
   // Generate random session ID
   std::string generate_session_id() {
@@ -31,14 +33,42 @@ class IDFWebServer {
     return id;
   }
 
+  // Cleanup expired sessions (prevent memory leaks)
+  void cleanup_expired_sessions() {
+    time_t now = ::time(nullptr);
+
+    // Only cleanup every SESSION_CLEANUP_INTERVAL seconds
+    if (now - last_session_cleanup < SESSION_CLEANUP_INTERVAL) {
+      return;
+    }
+
+    last_session_cleanup = now;
+
+    // Remove expired sessions
+    auto it = active_sessions.begin();
+    while (it != active_sessions.end()) {
+      if (now > it->second) {
+        ESP_LOGI("session", "Cleaning up expired session: %s", it->first.c_str());
+        it = active_sessions.erase(it);
+      } else {
+        ++it;
+      }
+    }
+
+    ESP_LOGI("session", "Active sessions: %d", active_sessions.size());
+  }
+
   // Check if session is valid
   bool is_session_valid(const char* cookie_header) {
     if (!cookie_header) return false;
-    
+
+    // Periodic cleanup of expired sessions
+    cleanup_expired_sessions();
+
     // Parse session=xxx from cookie
     const char* session_start = strstr(cookie_header, "session=");
     if (!session_start) return false;
-    
+
     session_start += 8;  // Skip "session="
     const char* session_end = strchr(session_start, ';');
     std::string session_id;
@@ -47,17 +77,17 @@ class IDFWebServer {
     } else {
       session_id = std::string(session_start);
     }
-    
+
     // Check if session exists and not expired
     auto it = active_sessions.find(session_id);
     if (it == active_sessions.end()) return false;
-    
+
     time_t now = ::time(nullptr);  // Use global time() function
     if (now > it->second) {
       active_sessions.erase(it);
       return false;
     }
-    
+
     return true;
   }
 
@@ -178,67 +208,62 @@ class IDFWebServer {
     return json;
   }
 
-  // WiFi Scan
+  // WiFi Scan (Non-blocking approach with retry)
   std::string buildWiFiScanJSON() {
     char buffer[256];
     std::string json = "[";
-    
-    ESP_LOGI("wifi_scan", "Requesting WiFi scan via ESPHome component...");
-    
-    // Nutze ESPHome WiFi-Component um Scan zu triggern
-    auto wifi_comp = wifi::global_wifi_component;
-    if (wifi_comp != nullptr) {
-      // Trigger neuen Scan
-      wifi_comp->start_scanning();
-      
-      // Warte 3 Sekunden auf Scan-Ergebnisse
-      delay(3000);
-      
-      ESP_LOGI("wifi_scan", "Scan completed, getting results...");
-      
-      // Hole Scan-Ergebnisse direkt vom ESP-IDF
-      uint16_t ap_count = 0;
-      esp_wifi_scan_get_ap_num(&ap_count);
-      ESP_LOGI("wifi_scan", "Found %d networks", ap_count);
-      
-      if (ap_count > 0) {
-        // Begrenze auf max 20 APs
-        if (ap_count > 20) ap_count = 20;
-        
-        wifi_ap_record_t ap_records[20];
-        uint16_t actual_count = ap_count;
-        
-        esp_err_t err = esp_wifi_scan_get_ap_records(&actual_count, ap_records);
-        
-        if (err == ESP_OK) {
-          for (int i = 0; i < actual_count; i++) {
-            if (i > 0) json += ",";
-            
-            // Escape SSID für JSON (falls Sonderzeichen)
-            std::string ssid_escaped;
-            for (int j = 0; j < 33 && ap_records[i].ssid[j] != 0; j++) {
-              char c = ap_records[i].ssid[j];
-              if (c == '"' || c == '\\') {
-                ssid_escaped += '\\';
-              }
-              ssid_escaped += c;
+
+    ESP_LOGI("wifi_scan", "Requesting WiFi scan results...");
+
+    // Hole Scan-Ergebnisse direkt vom ESP-IDF
+    // WICHTIG: Nicht delay() verwenden! Das blockiert den gesamten Server.
+    // Stattdessen: Client triggert Scan, wartet client-seitig, ruft dann Ergebnisse ab
+    uint16_t ap_count = 0;
+    esp_wifi_scan_get_ap_num(&ap_count);
+    ESP_LOGI("wifi_scan", "Found %d cached networks", ap_count);
+
+    if (ap_count > 0) {
+      // Begrenze auf max 20 APs
+      if (ap_count > 20) ap_count = 20;
+
+      wifi_ap_record_t ap_records[20];
+      uint16_t actual_count = ap_count;
+
+      esp_err_t err = esp_wifi_scan_get_ap_records(&actual_count, ap_records);
+
+      if (err == ESP_OK) {
+        for (int i = 0; i < actual_count; i++) {
+          if (i > 0) json += ",";
+
+          // Escape SSID für JSON (falls Sonderzeichen)
+          std::string ssid_escaped;
+          for (int j = 0; j < 33 && ap_records[i].ssid[j] != 0; j++) {
+            char c = ap_records[i].ssid[j];
+            if (c == '"' || c == '\\') {
+              ssid_escaped += '\\';
             }
-            
-            snprintf(buffer, sizeof(buffer),
-              "{\"ssid\":\"%s\",\"rssi\":%d,\"secure\":%s}",
-              ssid_escaped.c_str(),
-              ap_records[i].rssi,
-              (ap_records[i].authmode != WIFI_AUTH_OPEN) ? "true" : "false");
-            json += buffer;
+            ssid_escaped += c;
           }
-        } else {
-          ESP_LOGE("wifi_scan", "Failed to get AP records: %d", err);
+
+          snprintf(buffer, sizeof(buffer),
+            "{\"ssid\":\"%s\",\"rssi\":%d,\"secure\":%s}",
+            ssid_escaped.c_str(),
+            ap_records[i].rssi,
+            (ap_records[i].authmode != WIFI_AUTH_OPEN) ? "true" : "false");
+          json += buffer;
         }
+      } else {
+        ESP_LOGE("wifi_scan", "Failed to get AP records: %d", err);
       }
     } else {
-      ESP_LOGE("wifi_scan", "WiFi component not available");
+      // Trigger neuen Scan für nächsten Request
+      auto wifi_comp = wifi::global_wifi_component;
+      if (wifi_comp != nullptr) {
+        wifi_comp->start_scanning();
+        ESP_LOGI("wifi_scan", "Triggered new scan for next request");
+      }
     }
-    
+
     json += "]";
     return json;
   }
@@ -703,9 +728,9 @@ body{background:linear-gradient(135deg,#0f172a,#1e293b);color:#f1f5f9;font-famil
     
     httpd_resp_set_type(req, "application/json");
     httpd_resp_send(req, "{\"success\":true,\"message\":\"WiFi-Einstellungen gespeichert! ESP32 wird neu gestartet...\"}", HTTPD_RESP_USE_STRLEN);
-    
-    // Restart nach 2 Sekunden
-    delay(2000);
+
+    // Restart nach kurzem Delay (Response muss raus)
+    delay(500);
     esp_restart();
     
     return ESP_OK;
@@ -813,9 +838,9 @@ body{background:linear-gradient(135deg,#0f172a,#1e293b);color:#f1f5f9;font-famil
   static esp_err_t api_system_restart_handler(httpd_req_t *req) {
     httpd_resp_set_type(req, "application/json");
     httpd_resp_send(req, "{\"success\":true}", HTTPD_RESP_USE_STRLEN);
-    
+
     ESP_LOGI("config", "Restarting...");
-    delay(1000);
+    delay(500);  // Kurzer Delay für Response
     esp_restart();
     
     return ESP_OK;
@@ -824,14 +849,14 @@ body{background:linear-gradient(135deg,#0f172a,#1e293b);color:#f1f5f9;font-famil
   // API: Factory Reset
   static esp_err_t api_system_factory_reset_handler(httpd_req_t *req) {
     IDFWebServer* instance = (IDFWebServer*)req->user_ctx;
-    
+
     instance->config_storage.factory_reset();
-    
+
     httpd_resp_set_type(req, "application/json");
     httpd_resp_send(req, "{\"success\":true}", HTTPD_RESP_USE_STRLEN);
-    
+
     ESP_LOGI("config", "Factory reset, restarting...");
-    delay(1000);
+    delay(500);  // Kurzer Delay für Response
     esp_restart();
     
     return ESP_OK;
