@@ -1,397 +1,446 @@
-# ESPHome Sensor Konfigurationen
+# ESP32 Wasserleck-Sensor mit Web-Dashboard
 
-Dieses Repository enthält ESPHome-Konfigurationen für verschiedene Sensoren.
+Ein vollständiges ESP32-basiertes Wasserleck-Erkennungssystem mit modernem Web-Dashboard und Konfigurationsinterface - alles direkt vom ESP32 ausgeliefert.
 
-## Repository-Struktur
+## Features
+
+- 💧 **Wasserleck-Erkennung** mit GPIO-basiertem Sensor
+- 📊 **Echtzeit-Dashboard** mit automatischer Aktualisierung
+- ⚙️ **Web-basierte Konfiguration** für WiFi, NTP und System-Einstellungen
+- 🔒 **Passwort-geschützte Admin-Seite**
+- 📡 **JSON REST-API** für alle Sensordaten
+- 💾 **Persistente Speicherung** aller Einstellungen in NVS
+- 🔄 **OTA-Updates** für Firmware-Aktualisierungen
+- 🌐 **Alles vom ESP32** - keine externe Webapp nötig
+
+## Hardware-Anforderungen
+
+- **ESP32** Board (z.B. NodeMCU-32S)
+- **Wasserleck-Sensor** (2-Draht-Kabel, z.B. Shelly Leak Sensor Cable)
+- **USB-Kabel** für initiales Flashen
+
+### Hardware-Setup
 
 ```
-.
-├── humidity_sensors/        # Temperatur- und Luftfeuchtigkeitssensoren
-│   └── humidity01.yaml     # SHT4x Sensor mit ESP32
-├── leak_sensors/           # Wasserleck-Sensoren
-│   └── leak01.yaml         # Leak Sensor Cable mit ESP32
-├── esp32_webinterface/     # 🖥️ Kompakte Dashboards FÜR ESP32
-│   ├── humidity_dashboard.html  # Läuft AUF dem ESP32 (kompakt)
-│   ├── leak_dashboard.html      # Läuft AUF dem ESP32 (kompakt)
-│   ├── humidity_webapp.html     # 🌟 NEU: Professional Webapp mit Charts
-│   ├── leak_webapp.html         # 🌟 NEU: Professional Webapp mit Event-Log
-│   ├── README_WEBAPP.md         # Webapp-Dokumentation
-│   ├── API_DOCUMENTATION.md     # JSON API Dokumentation
-│   └── README.md                # Detaillierte Anleitung
-├── web_dashboard_external/ # 📊 Externes Dashboard (PC/Raspberry Pi)
-│   ├── index.html          # Zentrale Überwachung ALLER Sensoren
-│   ├── css/, js/           # Komplexes Dashboard mit Charts
-│   └── README.md           # Dokumentation
-└── secrets.yaml            # WiFi-Zugangsdaten (nicht im Git!)
+ESP32 Pin  |  Leak Sensor Cable
+-----------|-------------------
+GND        |  Draht 1 (schwarz)
+GPIO4      |  Draht 2 (rot)
 ```
+
+**Funktionsweise:** Der ESP32 aktiviert einen internen Pull-up-Widerstand auf GPIO4. Bei trockenem Sensor ist der Pin HIGH. Wenn Wasser die beiden Drähte verbindet, wird der Pin LOW → Leck erkannt!
 
 ## Erste Schritte
 
-### 1. Secrets-Datei erstellen
+### 1. Repository klonen
 
 ```bash
-cat > secrets.yaml << 'EOF'
+git clone https://github.com/YOUR_USERNAME/leakage.git
+cd leakage
+```
+
+### 2. Python Virtual Environment erstellen
+
+```bash
+python3 -m venv venv
+source venv/bin/activate  # Auf Windows: venv\Scripts\activate
+```
+
+### 3. Dependencies installieren
+
+```bash
+pip install -r requirements.txt
+```
+
+### 4. Secrets konfigurieren
+
+```bash
+cp secrets.yaml.example secrets.yaml
+```
+
+Bearbeite `secrets.yaml` und füge deine WiFi-Credentials ein:
+
+```yaml
 wifi_ssid: "DeinWiFiName"
 wifi_password: "DeinWiFiPasswort"
-EOF
+api_key: "GENERIERTER_API_KEY"
+ota_password: "GENERIERTES_OTA_PASSWORT"
 ```
 
-**WICHTIG:** Die `secrets.yaml` sollte in `.gitignore` stehen und nicht ins Repository committed werden!
+**API Key generieren:**
+```bash
+source venv/bin/activate
+python -c "import secrets; print(secrets.token_urlsafe(32))"
+```
 
-### 2. ESPHome installieren
+### 5. Hardware anschließen
+
+- Verbinde den ESP32 per USB mit deinem Computer
+- Schließe den Leak-Sensor an (GPIO4 + GND)
+
+### 6. Firmware flashen
 
 ```bash
-pip install esphome
+./flash_esp32_complete.sh
 ```
 
-### 3. API-Keys und Passwörter generieren
+Wähle Option 1 (USB) für das erste Flash.
 
-In den jeweiligen YAML-Dateien die Platzhalter "xxx" durch sichere Werte ersetzen:
-- `api.encryption.key`: API Verschlüsselungsschlüssel
-- `ota.password`: Passwort für OTA-Updates
+### 7. Dashboard aufrufen
 
-Diese können mit ESPHome automatisch generiert werden.
+Nach dem Neustart:
+- Öffne http://10.10.50.91/ im Browser
+- Standard-Login: **admin** / **admin**
+- **Wichtig:** Ändere das Passwort sofort über Einstellungen → System!
 
----
+## Entwicklungs-Workflow
 
-## Humidity Sensor (humidity01.yaml)
+### Feature entwickeln
 
-### Hardware
-- **Mikrocontroller**: ESP32 NodeMCU-32S
-- **Sensor**: SHT4x (I2C)
-- **Pins**:
-  - SDA: GPIO21
-  - SCL: GPIO22
+1. **YAML bearbeiten:**
+   ```bash
+   nano leak_sensors/leak01.yaml
+   ```
 
-### Features
-- Temperaturmessung
-- Luftfeuchtigkeitsmessung
-- WiFi Signal-Überwachung
-- Uptime-Tracking
-- Home Assistant Integration
-- OTA Updates
-- Webserver
-- Fallback Access Point
+2. **Custom Components anpassen:**
+   ```bash
+   nano leak_sensors/custom_components/idf_webserver.h
+   nano leak_sensors/custom_components/config_storage.h
+   ```
 
-### Verwendung
+3. **Syntax prüfen:**
+   ```bash
+   source venv/bin/activate
+   esphome config leak_sensors/leak01.yaml
+   ```
+
+### Tests ausführen
+
+**Alle Tests (Mock + Hardware):**
+```bash
+source venv/bin/activate
+./run_tests.sh
+```
+
+**Nur Mock-Tests (ohne Hardware):**
+```bash
+pytest tests/test_api_endpoints.py -v -k "not Hardware"
+```
+
+**Nur Hardware-Tests:**
+```bash
+pytest tests/test_api_endpoints.py::TestLeakHardware -v
+```
+
+### Kompilieren
 
 ```bash
-# Konfiguration validieren
-esphome config humidity_sensors/humidity01.yaml
-
-# Erstes Mal flashen (per USB)
-esphome run humidity_sensors/humidity01.yaml
-
-# OTA Updates (nach dem ersten Flash)
-esphome run humidity_sensors/humidity01.yaml
+source venv/bin/activate
+esphome compile leak_sensors/leak01.yaml
 ```
 
-### Kalibrierung
+### Deployment
 
-Falls der Sensor leicht von Referenzwerten abweicht, können Offset-Filter aktiviert werden:
-
-```yaml
-temperature:
-  name: "Temperatur"
-  filters:
-    - offset: -0.5  # z.B. -0.5°C Korrektur
+**Via USB:**
+```bash
+./flash_esp32_complete.sh
+# Wähle Option 1
 ```
 
----
-
-## Leak Sensor (leak01.yaml)
-
-### Hardware
-- **Mikrocontroller**: ESP32 NodeMCU-32S (oder ESP8266)
-- **Sensor**: Shelly Leak Sensor Cable (oder ähnlicher 2-Draht Leak Sensor)
-- **Pin**: GPIO4 (kann angepasst werden)
-
-### Anschluss
-
-Der Leak Sensor Cable hat 2 Drähte:
-
-```
-ESP32 Pin     |  Leak Sensor Cable
---------------|-------------------
-GND           |  Draht 1 (schwarz)
-GPIO4         |  Draht 2 (rot)
+**Via OTA (drahtlos):**
+```bash
+./flash_esp32_complete.sh
+# Wähle Option 2
 ```
 
-**WICHTIG:**
-- Keine externen Widerstände nötig - der ESP32 nutzt den internen Pullup!
-- Im trockenen Zustand ist der Kontakt offen (Pin HIGH)
-- Bei Nässe wird der Kontakt geschlossen (Pin LOW)
-- Home Assistant zeigt dann "Wet" an
+**Oder manuell:**
+```bash
+source venv/bin/activate
+esphome run leak_sensors/leak01.yaml --device 10.10.50.91
+```
 
-### Alternative Pins
-
-Falls GPIO4 bereits belegt ist, kannst du jeden anderen GPIO nutzen:
-- **ESP32**: GPIO2, GPIO4, GPIO5, GPIO12-19, GPIO21-23, GPIO25-27, GPIO32-39
-- **ESP8266**: GPIO4 (D2), GPIO5 (D1), GPIO12 (D6), GPIO13 (D7), GPIO14 (D5)
-
-**NICHT nutzen:** GPIO0, GPIO2, GPIO15 (Boot-Pins beim Start)
-
-### Funktionsweise
-
-1. Der ESP32 aktiviert den internen Pullup-Widerstand an GPIO4
-2. Im trockenen Zustand: Kontakt offen → Pin bleibt HIGH
-3. Bei Nässe: Wasser schließt den Kontakt → Pin wird LOW
-4. ESPHome erkennt die Zustandsänderung und meldet sie an Home Assistant
-
-### Features
-- Wasserleck-Erkennung mit delay-Filter (gegen Fehlalarme)
-- Logging bei Alarm
-- WiFi Signal-Überwachung
-- Home Assistant Integration mit Device Class "moisture"
-- OTA Updates
-- Webserver
-
-### Verwendung
+### Logs anzeigen
 
 ```bash
-# Konfiguration validieren
-esphome config leak_sensors/leak01.yaml
-
-# Erstes Mal flashen (per USB)
-esphome run leak_sensors/leak01.yaml
-
-# OTA Updates
-esphome run leak_sensors/leak01.yaml
+source venv/bin/activate
+esphome logs leak_sensors/leak01.yaml --device 10.10.50.91
 ```
 
-### Testen
+## Verwendung
 
-1. Logs anschauen: `esphome logs leak_sensors/leak01.yaml`
-2. Die beiden Drähte des Sensors manuell verbinden
-3. Im Log sollte "ALARM! Wasserleck erkannt!" erscheinen
-4. Drähte trennen → "Sensor wieder trocken" sollte erscheinen
+### Dashboard
 
----
+**URL:** http://10.10.50.91/
 
-## Netzwerk-Konfiguration
+Zeigt in Echtzeit:
+- Leak-Status (TROCKEN ✓ / WASSERLECK ⚠️)
+- WiFi-Signal-Stärke
+- Uptime
+- IP-Adresse, MAC, SSID
 
-Beide Sensoren nutzen DHCP by default. Falls du statische IPs brauchst, kannst du diese in den YAML-Dateien konfigurieren:
+**Auto-Refresh:** Alle 3 Sekunden (konfigurierbar in System-Einstellungen)
 
-```yaml
-wifi:
-  ssid: !secret wifi_ssid
-  password: !secret wifi_password
+### Konfigurationsinterface
 
-  manual_ip:
-    static_ip: 192.168.1.100    # Deine gewünschte IP
-    gateway: 192.168.1.1         # Dein Router
-    subnet: 255.255.255.0
+**URL:** http://10.10.50.91/login
+
+**Standard-Login:** admin / admin
+
+#### WiFi-Konfiguration
+- Netzwerk-Scan durchführen
+- SSID und Passwort ändern
+- Nach Änderung: Automatischer Neustart
+
+#### NTP/Zeit-Konfiguration
+- Primärer und sekundärer NTP-Server
+- Zeitzone auswählen
+- Standard: pool.ntp.org, time.google.com
+
+#### System-Einstellungen
+- **Gerätename** ändern
+- **Admin-Passwort** ändern
+- **OTA-Passwort** ändern
+- **Sensor-Filter** anpassen (delayed_on/delayed_off)
+- **Dashboard-Refresh-Intervall** einstellen
+- **Neustart** durchführen
+- **Factory-Reset** (setzt alle Einstellungen zurück)
+
+### REST-API
+
+Alle Endpunkte sind öffentlich zugänglich (kein Auth erforderlich):
+
+**Binärsensoren (Leak-Status):**
+```bash
+curl http://10.10.50.91/binary_sensor
 ```
+
+Beispiel-Response:
+```json
+[
+  {
+    "id": "leak01-wasserleck_erkannt",
+    "name": "Wasserleck erkannt",
+    "value": false
+  },
+  {
+    "id": "leak01-status",
+    "name": "Status",
+    "value": true
+  }
+]
+```
+
+**Sensoren (WiFi, Uptime):**
+```bash
+curl http://10.10.50.91/sensor
+```
+
+**Text-Sensoren (IP, MAC, SSID):**
+```bash
+curl http://10.10.50.91/text_sensor
+```
+
+## Testing
+
+### Test-Arten
+
+#### Mock-Tests
+- Testen API-Struktur und Datentypen
+- Benötigen **keine** Hardware
+- Schnell und immer verfügbar
+- Ideal für CI/CD
+
+```bash
+pytest tests/test_api_endpoints.py -v -k "not Hardware"
+```
+
+#### Hardware-Tests
+- Testen echte API-Responses vom ESP32
+- Benötigen ESP32 auf **10.10.50.91**
+- Validieren echte Sensordaten
+
+```bash
+pytest tests/test_api_endpoints.py::TestLeakHardware -v
+```
+
+### Test-Struktur
+
+```
+tests/
+├── conftest.py              # pytest Fixtures & Config
+├── test_api_endpoints.py    # API Tests (Mock + Hardware)
+└── README.md                # Test-Dokumentation
+```
+
+### Eigene Tests hinzufügen
+
+1. Test-Funktion in `tests/test_api_endpoints.py` erstellen
+2. Mock-Tests mit `@pytest.fixture` Daten
+3. Hardware-Tests in `TestLeakHardware` Klasse
+4. Tests ausführen mit `pytest -v`
 
 ## Troubleshooting
 
-### Humidity Sensor
-1. **Sensor nicht gefunden**: I2C-Verkabelung prüfen (SDA/SCL)
-2. **WiFi-Verbindung fehlschlägt**: Fallback-Hotspot "Humidity 1 Fallback Hotspot" nutzen
-3. **Logs anschauen**: `esphome logs humidity_sensors/humidity01.yaml`
+### ESP32 nicht erreichbar
 
-### Leak Sensor
-1. **Sensor reagiert nicht**:
-   - Verkabelung prüfen (GND und GPIO4)
-   - Im Log nach I/O-Fehlern suchen
-2. **Fehlalarme**:
-   - `delayed_on` Filter erhöhen (z.B. auf 500ms)
-   - Kabel auf Oxidation prüfen
-3. **WiFi-Verbindung fehlschlägt**: Fallback-Hotspot "Leak Sensor 01 Fallback" nutzen
-4. **Logs anschauen**: `esphome logs leak_sensors/leak01.yaml`
+**Problem:** `curl: (7) Failed to connect`
 
-## Home Assistant Integration
+**Lösungen:**
+1. Prüfe IP-Adresse im Router
+2. Prüfe WiFi-Verbindung: `ping 10.10.50.91`
+3. Logs prüfen: `esphome logs leak_sensors/leak01.yaml --device 10.10.50.91`
+4. Bei WiFi-Problemen: Fallback-Hotspot "Leak Sensor 01 Fallback" (PW: fallback123)
 
-Nach dem ersten Flash werden die Sensoren automatisch in Home Assistant erkannt (Auto-Discovery via ESPHome Integration).
+### Kompilierungsfehler
 
-1. Gehe zu **Einstellungen** → **Geräte & Dienste**
-2. ESPHome sollte die neuen Sensoren anzeigen
-3. Klicke auf **Konfigurieren** und gib den API-Key ein
+**Problem:** `Failed config` oder C++ Fehler
+
+**Lösungen:**
+1. Syntax prüfen: `esphome config leak_sensors/leak01.yaml`
+2. Dependencies updaten: `pip install --upgrade esphome`
+3. Build-Cache löschen: `rm -rf leak_sensors/.esphome/build/`
+
+### Login funktioniert nicht
+
+**Problem:** "Ungültige Anmeldedaten"
+
+**Lösungen:**
+1. Standard-Login: admin / admin
+2. Factory-Reset via Serial-Konsole
+3. NVS manuell löschen und neu flashen
+
+### Sensor erkennt Leck nicht
+
+**Problem:** Keine Alarm-Meldung bei Wasser
+
+**Lösungen:**
+1. Verkabelung prüfen (GPIO4 + GND)
+2. Logs prüfen auf GPIO-Events
+3. Sensor-Filter anpassen (delayed_on/delayed_off)
+4. Pin-Zustand testen: Drähte kurzschließen sollte Log-Meldung erzeugen
+
+### OTA-Update schlägt fehl
+
+**Problem:** Upload timeout oder Verbindungsfehler
+
+**Lösungen:**
+1. ESP32 neu starten
+2. Via USB flashen statt OTA
+3. OTA-Passwort in `secrets.yaml` prüfen
+4. Port 3232 im Firewall freigeben
+
+## Projekt-Struktur
+
+```
+leakage/
+├── leak_sensors/                  # ESP32 Firmware
+│   ├── leak01.yaml               # Haupt-Konfiguration (ESPHome)
+│   ├── secrets.yaml              # WiFi/Passwörter (nicht in Git!)
+│   ├── original.yaml             # Backup der Original-Config
+│   └── custom_components/        # Custom C++ Code
+│       ├── config_storage.h      # NVS Persistenz
+│       └── idf_webserver.h       # HTTP Server + UI
+│
+├── tests/                        # pytest Tests
+│   ├── conftest.py              # Test-Konfiguration
+│   ├── test_api_endpoints.py    # API Tests
+│   └── README.md                # Test-Dokumentation
+│
+├── flash_esp32_complete.sh      # Deploy-Script (USB/OTA)
+├── run_tests.sh                 # Test-Automation
+├── requirements.txt             # Python Dependencies
+├── secrets.yaml.example         # Template für Secrets
+└── README.md                    # Diese Datei
+```
+
+## Architektur
+
+### Komponenten
+
+**ESPHome (YAML):**
+- Basis-Konfiguration (WiFi, API, OTA)
+- Sensor-Definitionen (GPIO, WiFi-Signal, Uptime)
+- Integration von Custom Components
+
+**ConfigStorage (C++):**
+- Persistente Speicherung in ESP32 NVS
+- Konfiguration: WiFi, Admin-Credentials, NTP, System
+
+**IDFWebServer (C++):**
+- HTTP Server auf Port 80
+- Session-Management (Cookie-basiert)
+- REST-API Endpoints
+- Eingebettetes HTML/CSS/JS Dashboard
+- Konfigurationsseiten
+
+### Datenfluss
+
+```
+Browser → ESP32:80 → IDFWebServer
+                    ↓
+         [Session Check] → ConfigStorage (NVS)
+                    ↓
+         [JSON Builder] ← ESPHome Sensors
+                    ↓
+         Browser ← HTML/JSON Response
+```
+
+## Sicherheit
+
+### Best Practices
+
+1. **Admin-Passwort ändern** sofort nach erstem Login
+2. **OTA-Passwort** in `secrets.yaml` sicher aufbewahren
+3. **secrets.yaml** niemals committen (ist in `.gitignore`)
+4. **Session-Timeout:** 1 Stunde (konfigurierbar)
+5. **Nur HTTP:** Kein SSL (für Einfachheit - lokales Netzwerk)
+
+### Empfohlene Maßnahmen
+
+- ESP32 in eigenem VLAN isolieren
+- Firewall-Regeln für Port 80/3232
+- Starke Passwörter verwenden
+- Regelmäßige Firmware-Updates
+
+## Lizenz
+
+MIT License - Siehe LICENSE Datei
+
+## Beitragen
+
+Pull Requests sind willkommen! Für größere Änderungen bitte zuerst ein Issue öffnen.
+
+### Entwicklungs-Workflow für Contributors
+
+1. Fork erstellen
+2. Feature-Branch erstellen (`git checkout -b feature/AmazingFeature`)
+3. Änderungen committen (`git commit -m 'Add some AmazingFeature'`)
+4. Tests ausführen (`./run_tests.sh`)
+5. Branch pushen (`git push origin feature/AmazingFeature`)
+6. Pull Request öffnen
+
+## Support
+
+Bei Problemen oder Fragen:
+1. README und Troubleshooting-Section prüfen
+2. Logs analysieren (`esphome logs ...`)
+3. Issue auf GitHub öffnen mit:
+   - Problembeschreibung
+   - ESPHome-Version
+   - Relevante Logs
+   - Hardware-Details
+
+## Roadmap
+
+- [ ] MQTT Integration
+- [ ] Home Assistant Discovery
+- [ ] Mehrere Sensoren unterstützen
+- [ ] E-Mail/Push-Benachrichtigungen
+- [ ] Historische Daten/Graphen
+- [ ] Backup/Restore von Konfigurationen
 
 ---
 
-## 🖥️ Web-Dashboards - Drei Optionen!
-
-Du hast die Wahl zwischen drei professionellen Dashboard-Lösungen:
-
-### Option 1: Professional Webserver Frontend 🌟 NEU & EMPFOHLEN
-
-**Moderne Single-Page-Applications mit Charts, JSON API und professionellem Design!**
-
-```
-📍 Verzeichnis: esp32_webinterface/
-📄 Dateien: humidity_webapp.html, leak_webapp.html
-```
-
-**Features:**
-- ✅ **Professional UI/UX** mit modernem Dark-Theme
-- 📊 **Interactive Charts** mit Chart.js (Humidity: Verlaufsdiagramm)
-- 🔄 **Auto-Refresh** mit Pause/Resume-Funktion
-- 📱 **Fully Responsive** - perfekt auf Mobile, Tablet, Desktop
-- 💾 **Data Export** - JSON-Export aller Daten
-- 🚨 **Event Logging** (Leak Sensor) mit localStorage
-- 🔔 **Browser Notifications** bei Leck-Erkennung
-- 📡 **JSON REST API** - vollständige API-Dokumentation
-- 📈 **Trend Indicators** - Pfeile für steigende/fallende Werte
-- ⚙️ **Configurable** - einfach anpassbar
-
-**Schnellstart:**
-
-1. **Lokal öffnen:**
-   ```bash
-   cd esp32_webinterface/
-
-   # Python Web Server
-   python3 -m http.server 8000
-
-   # Im Browser öffnen:
-   # Humidity: http://localhost:8000/humidity_webapp.html
-   # Leak:     http://localhost:8000/leak_webapp.html
-   ```
-
-2. **Oder direkt im Browser:**
-   ```bash
-   # Die HTML-Dateien direkt öffnen
-   open humidity_webapp.html
-   open leak_webapp.html
-   ```
-
-3. **JSON API nutzen:**
-   ```bash
-   # API testen
-   curl http://192.168.1.100/sensor | jq
-   curl http://192.168.1.100/text_sensor | jq
-   curl http://192.168.1.100/binary_sensor | jq
-   ```
-
-**Dokumentation:**
-- 📖 [README_WEBAPP.md](esp32_webinterface/README_WEBAPP.md) - Vollständige Anleitung
-- 📡 [API_DOCUMENTATION.md](esp32_webinterface/API_DOCUMENTATION.md) - JSON API Docs
-
-**Ideal für:**
-- ✅ **Professional monitoring** mit modernem Design
-- ✅ **Data visualization** mit Charts
-- ✅ **Event tracking** und Logging
-- ✅ **API integration** in eigene Projekte
-- ✅ **Development** und Customization
-
----
-
-### Option 2: Kompakte ESP32-Dashboards
-
-**Ultra-kompakte Dashboards (~5KB) die DIREKT auf dem ESP32 laufen!**
-
-```
-📍 Verzeichnis: esp32_webinterface/
-📄 Dateien: humidity_dashboard.html, leak_dashboard.html
-```
-
-**Features:**
-- ✅ Läuft **direkt auf dem ESP32** (kein extra Server nötig!)
-- ✅ Ultra-kompakt (~5KB)
-- ✅ Modernes Dark-Theme Design
-- ✅ Auto-Refresh alle 5 Sekunden
-- ✅ Mobile-optimiert
-- ✅ Keine externen Abhängigkeiten (kein CDN)
-
-**Schnellstart:**
-
-1. **Standard-Interface nutzen:**
-   ```
-   http://<esp32-ip>/
-   ```
-   ✅ Funktioniert sofort, kein Setup!
-
-2. **Custom Dashboard hochladen:**
-   ```bash
-   # Dashboard lokal öffnen
-   open esp32_webinterface/humidity_dashboard.html
-
-   # Oder auf ESP32 hochladen (siehe README)
-   ```
-
-3. **Detaillierte Anleitung:**
-   → [esp32_webinterface/README.md](esp32_webinterface/README.md)
-
-**Ideal für:**
-- ✅ Einzelne Sensoren
-- ✅ Minimaler Footprint
-- ✅ Kein extra Server verfügbar
-
----
-
-### Option 3: Externes Dashboard (PC/Raspberry Pi)
-
-**Zentrales Dashboard zur Überwachung ALLER Sensoren mit Charts!**
-
-```
-📍 Verzeichnis: web_dashboard_external/
-```
-
-**Features:**
-- 📊 **Zentrale Überwachung** aller Sensoren
-- 📈 **Interaktive Charts** mit 24h-Historie
-- 🚨 **Alarm-System** mit Browser-Benachrichtigungen
-- 🏠 **Home Assistant Integration**
-- 📱 **Responsive Design** für alle Geräte
-
-**Schnellstart:**
-
-```bash
-cd web_dashboard_external
-python3 -m http.server 8080
-
-# Im Browser: http://localhost:8080
-```
-
-**Konfiguration in `js/config.js`:**
-```javascript
-sensors: {
-    humidity: [
-        { id: 'humidity01', host: '192.168.1.100', port: 80 }
-    ],
-    leak: [
-        { id: 'leak01', host: '192.168.1.101', port: 80 }
-    ]
-}
-```
-
-**Detaillierte Anleitung:**
-→ [web_dashboard_external/README.md](web_dashboard_external/README.md)
-
-**Ideal für:**
-- ✅ Mehrere Sensoren zentral überwachen
-- ✅ Charts und Historie wichtig
-- ✅ PC/Raspberry Pi vorhanden
-
----
-
-### Vergleich der Optionen
-
-| Feature | Professional Webapp | Kompakt-Dashboard | Externes Dashboard |
-|---------|-------------------|------------------|-------------------|
-| **Läuft auf** | PC/Server (empfohlen) | Direkt auf ESP32 | PC/Server/Raspberry Pi |
-| **Setup** | ✅ Minimal (Web Server) | ✅ Minimal | ⚠️ Etwas Aufwand |
-| **Charts** | ✅ Ja (Chart.js) | ❌ Nein | ✅ Ja (24h Historie) |
-| **Event Logging** | ✅ Ja (localStorage) | ❌ Nein | ✅ Ja |
-| **Mehrere Sensoren** | ⚠️ Einer pro Seite | ❌ Nein (nur einer) | ✅ Ja (alle zentral) |
-| **Größe** | ⚠️ ~25-30KB | ✅ ~5KB | ⚠️ ~500KB |
-| **JSON API** | ✅ Voll dokumentiert | ✅ Verwendet API | ✅ Verwendet API |
-| **Data Export** | ✅ Ja | ❌ Nein | ❌ Nein |
-| **Notifications** | ✅ Browser Alerts | ❌ Nein | ✅ Ja |
-| **Mobile** | ✅ Fully Responsive | ✅ Ja | ✅ Ja |
-| **Customization** | ✅ Sehr einfach | ⚠️ Begrenzt | ⚠️ Moderat |
-
-**Empfehlung:**
-- Für **professionelles Monitoring** → **Option 1 (Professional Webapp)** 🌟
-- Für **minimalen Footprint** → **Option 2 (Kompakt-Dashboard)**
-- Für **zentrale Überwachung vieler Sensoren** → **Option 3 (Externes Dashboard)**
-- Oder **alle kombinieren** für maximale Flexibilität! 🎉
-
----
-
-## Weitere Informationen
-
-- [ESPHome Dokumentation](https://esphome.io/)
-- [Home Assistant ESPHome Integration](https://www.home-assistant.io/integrations/esphome/)
-- [ESP32 GPIO Pinout](https://randomnerdtutorials.com/esp32-pinout-reference-gpios/)
+**Version:** 2.0  
+**Letztes Update:** 2025-01-18  
+**ESPHome:** 2025.10.5+

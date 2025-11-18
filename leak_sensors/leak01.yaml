@@ -8,8 +8,9 @@
 esphome:
   name: leak01
   friendly_name: Leak Sensor 01
-  # Custom Component für ESP-IDF Webserver mit eingebetteter HTML
+  # Custom Components für ESP-IDF Webserver mit Config-UI
   includes:
+    - custom_components/config_storage.h
     - custom_components/idf_webserver.h
   on_boot:
     priority: -100  # Nach allen anderen Components
@@ -27,6 +28,12 @@ esp32:
   framework:
     type: esp-idf
     version: recommended
+
+# ============================================================================
+# Preferences (für NVS Storage)
+# ============================================================================
+preferences:
+  flash_write_interval: 1min
 
 # ============================================================================
 # Logging
