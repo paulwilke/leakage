@@ -49,6 +49,14 @@ ota:
     password: !secret ota_password  # OTA Update Passwort
 
 # ============================================================================
+# Safe Mode
+# Aktiviert automatischen Rollback bei fehlgeschlagenen Updates
+# ============================================================================
+safe_mode:
+  reboot_timeout: 5min    # Timeout für Safe Mode Aktivierung
+  num_attempts: 3         # Anzahl Boot-Versuche vor Safe Mode
+
+# ============================================================================
 # WiFi Konfiguration
 # Statische IP-Adresse für zuverlässige Verbindung
 # ============================================================================
@@ -77,9 +85,12 @@ captive_portal:
 # ============================================================================
 # Webserver
 # Ermöglicht direkten Zugriff über Browser (http://<sensor-ip>)
+# Optimiert für Performance
 # ============================================================================
 web_server:
   port: 80
+  include_internal: false  # Interne Sensoren nicht im JSON-API anzeigen (reduziert Payload)
+  ota: false              # OTA-Updates nur über dediziertes OTA-Interface (sicherer)
 
 # ============================================================================
 # Zeitsynchronisation

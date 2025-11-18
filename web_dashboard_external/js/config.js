@@ -71,7 +71,7 @@ const DashboardConfig = {
     // Update-Intervalle
     // ========================================================================
     updateIntervals: {
-        sensors: 5000,      // Sensor-Daten alle 5 Sekunden aktualisieren
+        sensors: 10000,     // Sensor-Daten alle 10 Sekunden aktualisieren (optimiert)
         charts: 60000,      // Charts alle 60 Sekunden aktualisieren
         history: 300000,    // Historie alle 5 Minuten aktualisieren
     },

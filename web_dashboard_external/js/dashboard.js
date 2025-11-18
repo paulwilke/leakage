@@ -213,11 +213,17 @@ class Dashboard {
         const url = `http://${sensor.host}:${sensor.port}/text_sensor`;
 
         try {
+            // Timeout mit AbortController implementieren
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 3000); // 3 Sekunden Timeout
+
             const response = await fetch(url, {
                 method: 'GET',
                 mode: 'cors',
-                timeout: 5000
+                signal: controller.signal
             });
+
+            clearTimeout(timeoutId);
 
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
@@ -230,7 +236,11 @@ class Dashboard {
 
         } catch (error) {
             // Fallback auf Demo-Daten bei Netzwerkfehler
-            this.logError('ESPHome-Verbindung fehlgeschlagen, verwende Demo-Daten');
+            if (error.name === 'AbortError') {
+                this.logError('ESPHome-Verbindung timeout, verwende Demo-Daten');
+            } else {
+                this.logError('ESPHome-Verbindung fehlgeschlagen, verwende Demo-Daten');
+            }
             return DemoMode.generateData();
         }
     }
@@ -258,25 +268,36 @@ class Dashboard {
 
         const url = `${DashboardConfig.homeAssistant.url}/api/states/${sensor.homeAssistantEntity}`;
 
-        const response = await fetch(url, {
-            method: 'GET',
-            headers: {
-                'Authorization': `Bearer ${DashboardConfig.homeAssistant.accessToken}`,
-                'Content-Type': 'application/json'
+        // Timeout mit AbortController implementieren
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 3000); // 3 Sekunden Timeout
+
+        try {
+            const response = await fetch(url, {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${DashboardConfig.homeAssistant.accessToken}`,
+                    'Content-Type': 'application/json'
+                },
+                signal: controller.signal
+            });
+
+            clearTimeout(timeoutId);
+
+            if (!response.ok) {
+                throw new Error(`Home Assistant API error! status: ${response.status}`);
             }
-        });
 
-        if (!response.ok) {
-            throw new Error(`Home Assistant API error! status: ${response.status}`);
+            const data = await response.json();
+
+            return {
+                temperature: parseFloat(data.attributes.temperature) || 0,
+                humidity: parseFloat(data.attributes.humidity) || 0,
+                status: data.state === 'unavailable' ? 'offline' : 'online'
+            };
+        } finally {
+            clearTimeout(timeoutId);
         }
-
-        const data = await response.json();
-
-        return {
-            temperature: parseFloat(data.attributes.temperature) || 0,
-            humidity: parseFloat(data.attributes.humidity) || 0,
-            status: data.state === 'unavailable' ? 'offline' : 'online'
-        };
     }
 
     // ========================================================================
