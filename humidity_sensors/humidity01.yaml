@@ -38,7 +38,7 @@ logger:
 # ============================================================================
 api:
   encryption:
-    key: "xxx"  # API Verschlüsselungsschlüssel - sollte eindeutig sein
+    key: !secret api_key  # API Verschlüsselungsschlüssel - sollte eindeutig sein
 
 # ============================================================================
 # OTA Updates (Over-The-Air)
@@ -46,7 +46,7 @@ api:
 # ============================================================================
 ota:
   - platform: esphome
-    password: "xxx"  # OTA Update Passwort
+    password: !secret ota_password  # OTA Update Passwort
 
 # ============================================================================
 # WiFi Konfiguration
