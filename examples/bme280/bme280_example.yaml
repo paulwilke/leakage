@@ -1,0 +1,238 @@
+# ============================================================================
+# ESPHome UI Framework - BME280 Sensor Example
+# ============================================================================
+# This example demonstrates how to use the BME280 environmental sensor
+# with the UI Framework. It creates three separate sensor components:
+# - Temperature (°C)
+# - Humidity (%)
+# - Pressure (hPa)
+#
+# Hardware:
+# - ESP32 board
+# - BME280 sensor module (I2C)
+# - Connect: SDA to GPIO21, SCL to GPIO22, VCC to 3.3V, GND to GND
+#
+# I2C Address: 0x76 (or 0x77, check your module)
+# ============================================================================
+
+esphome:
+  name: bme280-demo
+  friendly_name: BME280 Demo Device
+
+  # Include framework headers
+  includes:
+    - ../../framework/include/component.h
+    - ../../framework/include/registry.h
+    - ../../framework/include/auth.h
+    - ../../framework/include/config_storage.h
+    - ../../framework/include/deep_sleep.h
+    - ../../framework/include/ui_framework.h
+    - ../bme280/bme280_sensor.h
+
+  # Initialize framework on boot
+  on_boot:
+    priority: -10  # After WiFi connects (WiFi priority is 250)
+    then:
+      - lambda: |-
+          // Initialize UI Framework
+          static esphome_ui::UIFramework* framework = new esphome_ui::UIFramework();
+          if (!framework->setup()) {
+            ESP_LOGE("main", "Failed to initialize UI Framework!");
+            return;
+          }
+
+          // Create BME280 sensors
+          using namespace esphome_ui::examples;
+
+          static BME280Sensor* temp_sensor = new BME280Sensor(
+            "bme280_temp",
+            BME280Sensor::TEMPERATURE,
+            0x76,
+            "Living Room Temperature"
+          );
+
+          static BME280Sensor* humidity_sensor = new BME280Sensor(
+            "bme280_humidity",
+            BME280Sensor::HUMIDITY,
+            0x76,
+            "Living Room Humidity"
+          );
+
+          static BME280Sensor* pressure_sensor = new BME280Sensor(
+            "bme280_pressure",
+            BME280Sensor::PRESSURE,
+            0x76,
+            "Atmospheric Pressure"
+          );
+
+          // Initialize sensors (shared BME280 chip)
+          // Only need to setup once since they share the same chip
+          if (temp_sensor->setup()) {
+            framework->registerComponent(temp_sensor);
+            framework->registerComponent(humidity_sensor);
+            framework->registerComponent(pressure_sensor);
+
+            ESP_LOGI("main", "✅ BME280 sensors registered successfully");
+            framework->getRegistry().logComponents();
+          } else {
+            ESP_LOGE("main", "❌ Failed to initialize BME280 sensor");
+          }
+
+# ============================================================================
+# ESP32 Configuration
+# ============================================================================
+esp32:
+  board: nodemcu-32s
+  framework:
+    type: esp-idf
+    version: recommended
+
+# ============================================================================
+# Preferences for NVS storage
+# ============================================================================
+preferences:
+  flash_write_interval: 1min
+
+# ============================================================================
+# Logging
+# ============================================================================
+logger:
+  level: INFO
+  logs:
+    component: INFO
+    sensor: INFO
+
+# ============================================================================
+# Home Assistant API (optional)
+# ============================================================================
+api:
+  encryption:
+    key: !secret api_key
+
+# ============================================================================
+# OTA Updates
+# ============================================================================
+ota:
+  - platform: esphome
+    password: !secret ota_password
+
+# ============================================================================
+# Safe Mode
+# ============================================================================
+safe_mode:
+  reboot_timeout: 5min
+  num_attempts: 3
+
+# ============================================================================
+# WiFi Configuration
+# ============================================================================
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+
+  # Static IP (optional)
+  manual_ip:
+    static_ip: 10.10.50.92
+    gateway: 10.10.50.1
+    subnet: 255.255.255.0
+
+  # Fallback hotspot
+  ap:
+    ssid: "BME280 Demo Fallback"
+    password: "fallback123"
+
+# ============================================================================
+# Captive Portal
+# ============================================================================
+captive_portal:
+
+# ============================================================================
+# I2C Bus Configuration
+# ============================================================================
+i2c:
+  sda: GPIO21
+  scl: GPIO22
+  scan: true
+  id: bus_a
+
+# ============================================================================
+# Time Synchronization
+# ============================================================================
+time:
+  - platform: homeassistant
+    id: esptime
+
+# ============================================================================
+# System Sensors (optional - for monitoring)
+# ============================================================================
+sensor:
+  # WiFi Signal Strength
+  - platform: wifi_signal
+    name: "WiFi Signal"
+    update_interval: 60s
+
+  # Uptime
+  - platform: uptime
+    name: "Uptime"
+    update_interval: 60s
+
+  # Free Heap Memory
+  - platform: template
+    name: "Free Heap"
+    lambda: return esp_get_free_heap_size();
+    unit_of_measurement: "bytes"
+    update_interval: 60s
+
+# ============================================================================
+# Text Sensors (optional - for info display)
+# ============================================================================
+text_sensor:
+  # WiFi Info
+  - platform: wifi_info
+    ip_address:
+      name: "IP Address"
+    ssid:
+      name: "SSID"
+    mac_address:
+      name: "MAC Address"
+
+# ============================================================================
+# Status Binary Sensor
+# ============================================================================
+binary_sensor:
+  - platform: status
+    name: "Status"
+
+# ============================================================================
+# Notes:
+#
+# 1. Create secrets.yaml with:
+#    wifi_ssid: "YourWiFi"
+#    wifi_password: "YourPassword"
+#    api_key: "generated_32_char_key"
+#    ota_password: "your_ota_password"
+#
+# 2. Generate API key:
+#    python -c "import secrets; print(secrets.token_urlsafe(32))"
+#
+# 3. After flashing, access the web UI at:
+#    http://10.10.50.92/
+#
+# 4. Default admin credentials:
+#    Username: admin
+#    Password: admin
+#    (Change immediately after first login!)
+#
+# 5. The BME280 sensor data will appear automatically in the web UI
+#    under the Dashboard view.
+#
+# 6. To compile:
+#    esphome compile bme280_example.yaml
+#
+# 7. To upload via USB:
+#    esphome run bme280_example.yaml
+#
+# 8. To upload via OTA:
+#    esphome run bme280_example.yaml --device 10.10.50.92
+#
+# ============================================================================

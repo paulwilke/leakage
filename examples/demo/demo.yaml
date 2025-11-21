@@ -1,0 +1,387 @@
+# ============================================================================
+# ESPHome UI Framework - Complete Demo Configuration
+# ============================================================================
+# This demo showcases all framework features:
+# - BME280 environmental sensor (temperature, humidity, pressure)
+# - DS18B20 temperature sensor (OneWire)
+# - Relay actuator with safety timeout
+# - Web UI with authentication
+# - Multi-language support (EN/DE)
+# - RESTful API
+# - Component auto-discovery
+# - Deep sleep capability
+#
+# Hardware Required:
+# - ESP32 board (NodeMCU-32S or similar)
+# - BME280 sensor (I2C, address 0x76)
+# - DS18B20 sensor (OneWire, GPIO4)
+# - Relay module (GPIO23)
+# - 4.7kΩ resistor (for DS18B20 pull-up)
+#
+# Wiring:
+# BME280:   SDA=GPIO21, SCL=GPIO22, VCC=3.3V, GND=GND
+# DS18B20:  Data=GPIO4 (with 4.7kΩ pull-up), VCC=3.3V, GND=GND
+# Relay:    Signal=GPIO23, VCC=5V, GND=GND
+# ============================================================================
+
+esphome:
+  name: ui-framework-demo
+  friendly_name: UI Framework Demo
+
+  # Include all framework headers
+  includes:
+    - ../../framework/include/component.h
+    - ../../framework/include/registry.h
+    - ../../framework/include/auth.h
+    - ../../framework/include/config_storage.h
+    - ../../framework/include/deep_sleep.h
+    - ../../framework/include/ui_framework.h
+    - ../bme280/bme280_sensor.h
+    - ../ds18b20/ds18b20_sensor.h
+    - ../relay/relay_actuator.h
+
+  # Initialize framework on boot
+  on_boot:
+    priority: -10
+    then:
+      - lambda: |-
+          ESP_LOGI("main", "===========================================");
+          ESP_LOGI("main", "  ESPHome UI Framework Demo Starting");
+          ESP_LOGI("main", "===========================================");
+
+          // Initialize UI Framework
+          static esphome_ui::UIFramework* framework = new esphome_ui::UIFramework();
+          if (!framework->setup()) {
+            ESP_LOGE("main", "❌ Failed to initialize UI Framework!");
+            return;
+          }
+
+          using namespace esphome_ui::examples;
+
+          // ===================================================================
+          // BME280 Environmental Sensor
+          // ===================================================================
+          ESP_LOGI("main", "Setting up BME280 sensors...");
+
+          static BME280Sensor* bme_temp = new BME280Sensor(
+            "bme280_temp",
+            BME280Sensor::TEMPERATURE,
+            0x76,
+            "Indoor Temperature"
+          );
+
+          static BME280Sensor* bme_humidity = new BME280Sensor(
+            "bme280_humidity",
+            BME280Sensor::HUMIDITY,
+            0x76,
+            "Indoor Humidity"
+          );
+
+          static BME280Sensor* bme_pressure = new BME280Sensor(
+            "bme280_pressure",
+            BME280Sensor::PRESSURE,
+            0x76,
+            "Atmospheric Pressure"
+          );
+
+          if (bme_temp->setup()) {
+            framework->registerComponent(bme_temp);
+            framework->registerComponent(bme_humidity);
+            framework->registerComponent(bme_pressure);
+            ESP_LOGI("main", "✅ BME280 sensors registered");
+          } else {
+            ESP_LOGW("main", "⚠️  BME280 sensor not found (continuing anyway)");
+          }
+
+          // ===================================================================
+          // DS18B20 Temperature Sensor
+          // ===================================================================
+          ESP_LOGI("main", "Setting up DS18B20 sensor...");
+
+          static DS18B20Sensor* ds_temp = new DS18B20Sensor(
+            "ds18b20_temp",
+            4,  // GPIO4
+            "Water Temperature"
+          );
+
+          if (ds_temp->setup()) {
+            framework->registerComponent(ds_temp);
+            ESP_LOGI("main", "✅ DS18B20 sensor registered (addr: %s)",
+                     ds_temp->getAddressString().c_str());
+          } else {
+            ESP_LOGW("main", "⚠️  DS18B20 sensor not found (continuing anyway)");
+          }
+
+          // ===================================================================
+          // Relay Actuator
+          // ===================================================================
+          ESP_LOGI("main", "Setting up relay actuator...");
+
+          static RelayActuator* relay = new RelayActuator(
+            "relay1",
+            23,  // GPIO23
+            "Main Relay",
+            false,  // not inverted
+            false   // don't restore state
+          );
+
+          if (relay->setup()) {
+            // Set safety timeout: auto-off after 30 seconds
+            relay->setSafetyTimeout(30000);
+            framework->registerComponent(relay);
+            ESP_LOGI("main", "✅ Relay actuator registered (GPIO23, 30s timeout)");
+          } else {
+            ESP_LOGE("main", "❌ Failed to initialize relay");
+          }
+
+          // ===================================================================
+          // Framework Startup Complete
+          // ===================================================================
+          ESP_LOGI("main", "===========================================");
+          ESP_LOGI("main", "  Framework Initialization Complete");
+          ESP_LOGI("main", "===========================================");
+          framework->getRegistry().logComponents();
+          ESP_LOGI("main", "");
+          ESP_LOGI("main", "Web UI: http://%s/", WiFi.localIP().toString().c_str());
+          ESP_LOGI("main", "Default login: admin / admin");
+          ESP_LOGI("main", "⚠️  CHANGE PASSWORD IMMEDIATELY!");
+          ESP_LOGI("main", "===========================================");
+
+# ============================================================================
+# ESP32 Configuration
+# ============================================================================
+esp32:
+  board: nodemcu-32s
+  framework:
+    type: esp-idf
+    version: recommended
+
+# ============================================================================
+# Preferences for NVS storage
+# ============================================================================
+preferences:
+  flash_write_interval: 1min
+
+# ============================================================================
+# Logging
+# ============================================================================
+logger:
+  level: INFO
+  logs:
+    component: INFO
+    sensor: INFO
+    bme280: INFO
+    ds18b20: INFO
+    relay: INFO
+    ui_framework: INFO
+    auth: INFO
+
+# ============================================================================
+# Home Assistant API (Optional)
+# ============================================================================
+api:
+  encryption:
+    key: !secret api_key
+
+# ============================================================================
+# OTA Updates
+# ============================================================================
+ota:
+  - platform: esphome
+    password: !secret ota_password
+
+# ============================================================================
+# Safe Mode
+# ============================================================================
+safe_mode:
+  reboot_timeout: 5min
+  num_attempts: 3
+
+# ============================================================================
+# WiFi Configuration
+# ============================================================================
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+
+  # Static IP (recommended for easier access)
+  manual_ip:
+    static_ip: 10.10.50.100
+    gateway: 10.10.50.1
+    subnet: 255.255.255.0
+
+  # Fallback hotspot
+  ap:
+    ssid: "UI Framework Demo"
+    password: "demo12345"
+
+# ============================================================================
+# Captive Portal
+# ============================================================================
+captive_portal:
+
+# ============================================================================
+# I2C Bus (for BME280)
+# ============================================================================
+i2c:
+  sda: GPIO21
+  scl: GPIO22
+  scan: true
+  frequency: 100kHz
+  id: bus_a
+
+# ============================================================================
+# Time Synchronization
+# ============================================================================
+time:
+  - platform: homeassistant
+    id: esptime
+    on_time_sync:
+      then:
+        - logger.log: "Time synchronized with Home Assistant"
+
+# ============================================================================
+# Additional System Sensors (Optional)
+# ============================================================================
+sensor:
+  # WiFi Signal Strength
+  - platform: wifi_signal
+    name: "WiFi Signal"
+    id: wifi_signal_strength
+    update_interval: 60s
+    filters:
+      - sliding_window_moving_average:
+          window_size: 5
+          send_every: 5
+
+  # Device Uptime
+  - platform: uptime
+    name: "Uptime"
+    id: device_uptime
+    update_interval: 60s
+
+  # Free Heap Memory
+  - platform: template
+    name: "Free Heap"
+    id: free_heap_memory
+    lambda: return esp_get_free_heap_size();
+    unit_of_measurement: "bytes"
+    accuracy_decimals: 0
+    update_interval: 60s
+
+# ============================================================================
+# Text Sensors (Device Info)
+# ============================================================================
+text_sensor:
+  # WiFi Information
+  - platform: wifi_info
+    ip_address:
+      name: "IP Address"
+      id: device_ip
+    ssid:
+      name: "Connected SSID"
+      id: connected_ssid
+    mac_address:
+      name: "MAC Address"
+      id: device_mac
+
+  # ESPHome Version
+  - platform: version
+    name: "ESPHome Version"
+
+# ============================================================================
+# Binary Sensors
+# ============================================================================
+binary_sensor:
+  # Device Status
+  - platform: status
+    name: "Device Status"
+    id: device_status
+
+# ============================================================================
+# Switches (for testing relay via Home Assistant)
+# ============================================================================
+switch:
+  # Restart Button
+  - platform: restart
+    name: "Restart Device"
+
+# ============================================================================
+# Interval Component (for relay safety check)
+# ============================================================================
+interval:
+  # Check relay safety timeout every second
+  - interval: 1s
+    then:
+      - lambda: |-
+          // This would call relay->loop() if we exposed it
+          // For now, the relay checks timeout internally on each setState()
+
+# ============================================================================
+# USAGE INSTRUCTIONS
+# ============================================================================
+#
+# 1. Create secrets.yaml in the same directory:
+#
+#    wifi_ssid: "YourWiFiSSID"
+#    wifi_password: "YourWiFiPassword"
+#    api_key: "generate_with_command_below"
+#    ota_password: "your_ota_password"
+#
+# 2. Generate API key:
+#    python -c "import secrets; print(secrets.token_urlsafe(32))"
+#
+# 3. Compile and upload:
+#    esphome compile demo.yaml
+#    esphome run demo.yaml
+#
+# 4. Access web UI:
+#    http://10.10.50.100/
+#    Username: admin
+#    Password: admin
+#
+#    ⚠️  CHANGE DEFAULT PASSWORD IMMEDIATELY! ⚠️
+#
+# 5. Test the components:
+#    - Dashboard shows all sensor values
+#    - Click language switcher (EN/DE)
+#    - Login to access settings
+#    - Control relay (30-second auto-off safety)
+#
+# 6. API Endpoints:
+#    GET  http://10.10.50.100/api/status
+#    GET  http://10.10.50.100/api/components
+#    GET  http://10.10.50.100/api/sensors
+#    GET  http://10.10.50.100/api/actuators
+#    POST http://10.10.50.100/api/auth/login
+#    POST http://10.10.50.100/api/actuators/relay1
+#         Body: {"state": "on"} or {"state": "off"}
+#
+# 7. Integration with Home Assistant:
+#    Device should auto-discover via ESPHome integration
+#    All sensors and controls will appear automatically
+#
+# 8. Troubleshooting:
+#    - Monitor logs: esphome logs demo.yaml
+#    - Check I2C devices: Look for "I2C scan" in logs
+#    - Verify wiring with multimeter
+#    - Test sensors individually first
+#    - Check web browser console for JavaScript errors
+#
+# 9. Customization:
+#    - Change GPIO pins to match your wiring
+#    - Adjust sensor update intervals
+#    - Modify relay safety timeout
+#    - Add more sensors/actuators
+#    - Customize device name and IDs
+#
+# 10. Production Deployment:
+#     - Change default admin password
+#     - Set strong OTA password
+#     - Use static IP or DNS
+#     - Enable MQTT (optional)
+#     - Set up Home Assistant integration
+#     - Configure firewall rules
+#     - Test all safety features
+#
+# ============================================================================
