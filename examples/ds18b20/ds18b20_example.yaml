@@ -1,0 +1,164 @@
+# ============================================================================
+# ESPHome UI Framework - DS18B20 Temperature Sensor Example
+# ============================================================================
+# This example demonstrates the DS18B20 OneWire temperature sensor integration
+# with the UI Framework.
+#
+# Hardware Required:
+# - ESP32 board (NodeMCU-32S or similar)
+# - DS18B20 temperature sensor (OneWire)
+# - 4.7kΩ resistor (pull-up between Data and VCC)
+#
+# Wiring:
+# DS18B20:  Data=GPIO4 (with 4.7kΩ pull-up to VCC), VCC=3.3V, GND=GND
+#
+# Features:
+# - OneWire protocol support
+# - 64-bit unique addressing
+# - Configurable resolution (9-12 bit)
+# - CRC verification
+# - Auto-discovery in web UI
+# - Home Assistant compatible
+# ============================================================================
+
+esphome:
+  name: ds18b20-example
+  friendly_name: DS18B20 Example
+
+  # Include framework and sensor headers
+  includes:
+    - ../../framework/include/component.h
+    - ../../framework/include/registry.h
+    - ../../framework/include/auth.h
+    - ../../framework/include/config_storage.h
+    - ../../framework/include/deep_sleep.h
+    - ../../framework/include/ui_framework.h
+    - ds18b20_sensor.h
+
+  # Libraries for OneWire communication
+  libraries:
+    - "OneWire"
+
+  # Initialize framework on boot
+  on_boot:
+    priority: -10
+    then:
+      - lambda: |-
+          ESP_LOGI("main", "===========================================");
+          ESP_LOGI("main", "  DS18B20 Example Starting");
+          ESP_LOGI("main", "===========================================");
+
+          // Initialize UI Framework
+          static esphome_ui::UIFramework* framework = new esphome_ui::UIFramework();
+          if (!framework->setup()) {
+            ESP_LOGE("main", "❌ Failed to initialize UI Framework!");
+            return;
+          }
+
+          using namespace esphome_ui::examples;
+
+          // ===================================================================
+          // DS18B20 Temperature Sensor
+          // ===================================================================
+          ESP_LOGI("main", "Setting up DS18B20 sensor...");
+
+          static DS18B20Sensor* ds18b20 = new DS18B20Sensor(
+            "ds18b20_temp",
+            4,  // GPIO4
+            "Water Temperature",
+            DS18B20Sensor::RES_12_BIT  // 12-bit resolution
+          );
+
+          if (ds18b20->setup()) {
+            framework->registerComponent(ds18b20);
+            ESP_LOGI("main", "✅ DS18B20 sensor registered (addr: %s)",
+                     ds18b20->getAddressString().c_str());
+          } else {
+            ESP_LOGW("main", "⚠️  DS18B20 sensor not found - check wiring!");
+            ESP_LOGW("main", "    - Verify 4.7kΩ pull-up resistor installed");
+            ESP_LOGW("main", "    - Check data pin connection (GPIO4)");
+            ESP_LOGW("main", "    - Ensure sensor powered (3.3V or 5V)");
+          }
+
+          ESP_LOGI("main", "");
+          ESP_LOGI("main", "===========================================");
+          ESP_LOGI("main", "  Initialization Complete");
+          ESP_LOGI("main", "===========================================");
+          ESP_LOGI("main", "Web UI: http://10.10.50.100/");
+          ESP_LOGI("main", "Default login: admin / admin");
+          ESP_LOGI("main", "⚠️  CHANGE PASSWORD IMMEDIATELY!");
+          ESP_LOGI("main", "===========================================");
+
+# ============================================================================
+# ESP32 Configuration
+# ============================================================================
+esp32:
+  board: nodemcu-32s
+  framework:
+    type: esp-idf
+
+# ============================================================================
+# WiFi Configuration
+# ============================================================================
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+
+  manual_ip:
+    static_ip: 10.10.50.100
+    gateway: 10.10.50.1
+    subnet: 255.255.255.0
+
+  ap:
+    ssid: "DS18B20 Example"
+    password: "demo12345"
+
+# ============================================================================
+# Logging
+# ============================================================================
+logger:
+  level: INFO
+  logs:
+    component: INFO
+    sensor: INFO
+
+# ============================================================================
+# OTA Updates
+# ============================================================================
+ota:
+  - platform: esphome
+    password: !secret ota_password
+
+# ============================================================================
+# API (for Home Assistant)
+# ============================================================================
+api:
+  encryption:
+    key: !secret api_key
+
+# ============================================================================
+# Web Server (ESPHome built-in, optional)
+# ============================================================================
+# Note: The UI Framework provides its own web server
+# This is optional for diagnostics
+web_server:
+  port: 8080
+  auth:
+    username: admin
+    password: !secret ota_password
+
+# ============================================================================
+# Sensor Update Interval
+# ============================================================================
+# Update DS18B20 readings every 5 seconds
+interval:
+  - interval: 5s
+    then:
+      - lambda: |-
+          auto* sensor = static_cast<esphome_ui::examples::DS18B20Sensor*>(
+            esphome_ui::UIFramework::getInstance()->getRegistry().get("ds18b20_temp")
+          );
+
+          if (sensor) {
+            sensor->update();
+          }

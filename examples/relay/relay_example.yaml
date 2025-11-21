@@ -1,0 +1,242 @@
+# ============================================================================
+# ESPHome UI Framework - Relay Actuator Example
+# ============================================================================
+# This example demonstrates the relay actuator integration with the UI Framework.
+#
+# Hardware Required:
+# - ESP32 board (NodeMCU-32S or similar)
+# - Relay module (1-channel, active high or active low)
+#
+# Wiring:
+# Relay:    Signal=GPIO23, VCC=5V (for coil), GND=GND
+#
+# Features:
+# - ON/OFF control via web UI
+# - Safety timeout (auto-off after 30 seconds)
+# - Pulse mode (temporary ON)
+# - Toggle functionality
+# - Inverted logic support (active low)
+# - State persistence (optional)
+# - Authentication required
+# - Home Assistant compatible
+# ============================================================================
+
+esphome:
+  name: relay-example
+  friendly_name: Relay Example
+
+  # Include framework and actuator headers
+  includes:
+    - ../../framework/include/component.h
+    - ../../framework/include/registry.h
+    - ../../framework/include/auth.h
+    - ../../framework/include/config_storage.h
+    - ../../framework/include/deep_sleep.h
+    - ../../framework/include/ui_framework.h
+    - relay_actuator.h
+
+  # Initialize framework on boot
+  on_boot:
+    priority: -10
+    then:
+      - lambda: |-
+          ESP_LOGI("main", "===========================================");
+          ESP_LOGI("main", "  Relay Actuator Example Starting");
+          ESP_LOGI("main", "===========================================");
+
+          // Initialize UI Framework
+          static esphome_ui::UIFramework* framework = new esphome_ui::UIFramework();
+          if (!framework->setup()) {
+            ESP_LOGE("main", "❌ Failed to initialize UI Framework!");
+            return;
+          }
+
+          using namespace esphome_ui::examples;
+
+          // ===================================================================
+          // Relay Actuator
+          // ===================================================================
+          ESP_LOGI("main", "Setting up relay actuator...");
+
+          static RelayActuator* relay = new RelayActuator(
+            "relay1",
+            23,              // GPIO23
+            "Main Relay",
+            false,           // not inverted (active high)
+            false            // don't restore state on boot
+          );
+
+          if (relay->setup()) {
+            // Configure safety timeout: auto-off after 30 seconds
+            relay->setSafetyTimeout(30000);
+
+            framework->registerComponent(relay);
+            ESP_LOGI("main", "✅ Relay actuator registered (GPIO23, 30s timeout)");
+            ESP_LOGI("main", "    Safety: Relay will auto-off after 30 seconds");
+            ESP_LOGI("main", "    Auth: Login required to control relay");
+          } else {
+            ESP_LOGE("main", "❌ Failed to initialize relay!");
+          }
+
+          ESP_LOGI("main", "");
+          ESP_LOGI("main", "===========================================");
+          ESP_LOGI("main", "  Initialization Complete");
+          ESP_LOGI("main", "===========================================");
+          ESP_LOGI("main", "Web UI: http://10.10.50.100/");
+          ESP_LOGI("main", "Default login: admin / admin");
+          ESP_LOGI("main", "⚠️  CHANGE PASSWORD IMMEDIATELY!");
+          ESP_LOGI("main", "");
+          ESP_LOGI("main", "Control relay:");
+          ESP_LOGI("main", "  1. Login to web UI");
+          ESP_LOGI("main", "  2. Navigate to Dashboard");
+          ESP_LOGI("main", "  3. Click 'Main Relay' card");
+          ESP_LOGI("main", "  4. Use ON/OFF buttons");
+          ESP_LOGI("main", "===========================================");
+
+# ============================================================================
+# ESP32 Configuration
+# ============================================================================
+esp32:
+  board: nodemcu-32s
+  framework:
+    type: esp-idf
+
+# ============================================================================
+# WiFi Configuration
+# ============================================================================
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+
+  manual_ip:
+    static_ip: 10.10.50.100
+    gateway: 10.10.50.1
+    subnet: 255.255.255.0
+
+  ap:
+    ssid: "Relay Example"
+    password: "demo12345"
+
+# ============================================================================
+# Logging
+# ============================================================================
+logger:
+  level: INFO
+  logs:
+    component: INFO
+    actuator: INFO
+    relay: DEBUG  # Show relay state changes
+
+# ============================================================================
+# OTA Updates
+# ============================================================================
+ota:
+  - platform: esphome
+    password: !secret ota_password
+
+# ============================================================================
+# API (for Home Assistant)
+# ============================================================================
+api:
+  encryption:
+    key: !secret api_key
+
+# ============================================================================
+# Web Server (ESPHome built-in, optional)
+# ============================================================================
+# Note: The UI Framework provides its own web server
+# This is optional for diagnostics
+web_server:
+  port: 8080
+  auth:
+    username: admin
+    password: !secret ota_password
+
+# ============================================================================
+# Safety Timeout Monitor
+# ============================================================================
+# Check relay state every second to enforce safety timeout
+interval:
+  - interval: 1s
+    then:
+      - lambda: |-
+          auto* relay = static_cast<esphome_ui::examples::RelayActuator*>(
+            esphome_ui::UIFramework::getInstance()->getRegistry().get("relay1")
+          );
+
+          if (relay) {
+            relay->checkSafetyTimeout();
+          }
+
+# ============================================================================
+# Additional Configuration Examples
+# ============================================================================
+
+# Example: Inverted relay (active low)
+# Uncomment and modify if using active-low relay module:
+#
+# static RelayActuator* relay = new RelayActuator(
+#   "relay1",
+#   23,              // GPIO23
+#   "Main Relay",
+#   true,            // inverted = true (active low)
+#   false
+# );
+
+# Example: State persistence (restore state after reboot)
+# Uncomment to enable:
+#
+# static RelayActuator* relay = new RelayActuator(
+#   "relay1",
+#   23,
+#   "Main Relay",
+#   false,
+#   true             // restore_state = true
+# );
+
+# Example: Multiple relays
+# Add more relays by creating additional instances:
+#
+# static RelayActuator* relay2 = new RelayActuator(
+#   "relay2",
+#   22,              // Different GPIO
+#   "Secondary Relay",
+#   false,
+#   false
+# );
+# relay2->setup();
+# relay2->setSafetyTimeout(60000);  // 60 seconds
+# framework->registerComponent(relay2);
+
+# Example: Control via API
+# Use curl to control relay:
+#
+# # Login first
+# curl -X POST http://10.10.50.100/api/auth/login \
+#   -H "Content-Type: application/json" \
+#   -d '{"username":"admin","password":"admin"}' \
+#   -c cookies.txt
+#
+# # Turn ON
+# curl -X POST http://10.10.50.100/api/actuators/relay1 \
+#   -H "Content-Type: application/json" \
+#   -b cookies.txt \
+#   -d '{"state":"on"}'
+#
+# # Turn OFF
+# curl -X POST http://10.10.50.100/api/actuators/relay1 \
+#   -H "Content-Type: application/json" \
+#   -b cookies.txt \
+#   -d '{"state":"off"}'
+#
+# # Toggle
+# curl -X POST http://10.10.50.100/api/actuators/relay1 \
+#   -H "Content-Type: application/json" \
+#   -b cookies.txt \
+#   -d '{"action":"toggle"}'
+#
+# # Pulse (500ms)
+# curl -X POST http://10.10.50.100/api/actuators/relay1 \
+#   -H "Content-Type: application/json" \
+#   -b cookies.txt \
+#   -d '{"action":"pulse","duration":500}'
