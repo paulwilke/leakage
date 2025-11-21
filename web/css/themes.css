@@ -1,0 +1,184 @@
+/**
+ * Theme Variables
+ *
+ * Defines color schemes for dark and light themes.
+ * Uses CSS custom properties for easy theme switching.
+ */
+
+/* ============================================================================
+   Dark Theme (Default)
+   ============================================================================ */
+.theme-dark {
+    /* Background colors */
+    --bg-primary: #0f172a;
+    --bg-secondary: #1e293b;
+    --bg-tertiary: #334155;
+    --bg-elevated: #475569;
+
+    /* Text colors */
+    --text-primary: #f1f5f9;
+    --text-secondary: #94a3b8;
+    --text-tertiary: #64748b;
+    --text-inverted: #0f172a;
+
+    /* Border colors */
+    --border-primary: #475569;
+    --border-secondary: #334155;
+
+    /* Accent colors */
+    --accent-primary: #3b82f6;
+    --accent-primary-hover: #2563eb;
+    --accent-primary-active: #1d4ed8;
+
+    /* Status colors */
+    --status-success: #10b981;
+    --status-success-bg: rgba(16, 185, 129, 0.1);
+    --status-warning: #f59e0b;
+    --status-warning-bg: rgba(245, 158, 11, 0.1);
+    --status-error: #ef4444;
+    --status-error-bg: rgba(239, 68, 68, 0.1);
+    --status-info: #60a5fa;
+    --status-info-bg: rgba(96, 165, 250, 0.1);
+
+    /* Sensor value colors */
+    --sensor-value: #60a5fa;
+    --sensor-unit: #94a3b8;
+
+    /* Shadow */
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.5);
+    --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.5);
+    --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.5);
+}
+
+/* ============================================================================
+   Light Theme
+   ============================================================================ */
+.theme-light {
+    /* Background colors */
+    --bg-primary: #ffffff;
+    --bg-secondary: #f8fafc;
+    --bg-tertiary: #e2e8f0;
+    --bg-elevated: #cbd5e1;
+
+    /* Text colors */
+    --text-primary: #0f172a;
+    --text-secondary: #475569;
+    --text-tertiary: #94a3b8;
+    --text-inverted: #ffffff;
+
+    /* Border colors */
+    --border-primary: #cbd5e1;
+    --border-secondary: #e2e8f0;
+
+    /* Accent colors */
+    --accent-primary: #2563eb;
+    --accent-primary-hover: #1d4ed8;
+    --accent-primary-active: #1e40af;
+
+    /* Status colors */
+    --status-success: #059669;
+    --status-success-bg: rgba(5, 150, 105, 0.1);
+    --status-warning: #d97706;
+    --status-warning-bg: rgba(217, 119, 6, 0.1);
+    --status-error: #dc2626;
+    --status-error-bg: rgba(220, 38, 38, 0.1);
+    --status-info: #2563eb;
+    --status-info-bg: rgba(37, 99, 235, 0.1);
+
+    /* Sensor value colors */
+    --sensor-value: #2563eb;
+    --sensor-unit: #64748b;
+
+    /* Shadow */
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.1);
+    --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
+    --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1);
+}
+
+/* ============================================================================
+   Theme Transition
+   ============================================================================ */
+body {
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* ============================================================================
+   Component-specific theme adjustments
+   ============================================================================ */
+
+/* Cards */
+.card {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-secondary);
+    box-shadow: var(--shadow-sm);
+}
+
+.card:hover {
+    box-shadow: var(--shadow-md);
+}
+
+/* Buttons */
+.btn-primary {
+    background: var(--accent-primary);
+    color: var(--text-inverted);
+}
+
+.btn-primary:hover {
+    background: var(--accent-primary-hover);
+}
+
+.btn-primary:active {
+    background: var(--accent-primary-active);
+}
+
+/* Inputs */
+input, textarea, select {
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-primary);
+    color: var(--text-primary);
+}
+
+input:focus, textarea:focus, select:focus {
+    border-color: var(--accent-primary);
+    outline: none;
+    box-shadow: 0 0 0 3px var(--status-info-bg);
+}
+
+/* Links */
+a {
+    color: var(--accent-primary);
+}
+
+a:hover {
+    color: var(--accent-primary-hover);
+}
+
+/* Status indicators */
+.status-online { color: var(--status-success); }
+.status-offline { color: var(--status-error); }
+.status-warning { color: var(--status-warning); }
+
+/* Alerts */
+.alert-success {
+    background: var(--status-success-bg);
+    border-left: 4px solid var(--status-success);
+    color: var(--text-primary);
+}
+
+.alert-warning {
+    background: var(--status-warning-bg);
+    border-left: 4px solid var(--status-warning);
+    color: var(--text-primary);
+}
+
+.alert-error {
+    background: var(--status-error-bg);
+    border-left: 4px solid var(--status-error);
+    color: var(--text-primary);
+}
+
+.alert-info {
+    background: var(--status-info-bg);
+    border-left: 4px solid var(--status-info);
+    color: var(--text-primary);
+}

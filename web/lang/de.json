@@ -1,0 +1,109 @@
+{
+  "meta": {
+    "language": "de",
+    "name": "Deutsch",
+    "direction": "ltr",
+    "contributors": ["ESPHome UI Framework Team"]
+  },
+  "nav": {
+    "dashboard": "Dashboard",
+    "settings": "Einstellungen",
+    "about": "Über"
+  },
+  "pages": {
+    "dashboard": "Dashboard",
+    "settings": "Einstellungen",
+    "about": "Über"
+  },
+  "sections": {
+    "sensors": "Sensoren",
+    "controls": "Steuerung",
+    "status": "Status"
+  },
+  "components": {
+    "temperature": "Temperatur",
+    "humidity": "Luftfeuchtigkeit",
+    "pressure": "Luftdruck",
+    "relay": "Relais",
+    "switch": "Schalter",
+    "binary_sensor": "Binärsensor"
+  },
+  "status": {
+    "online": "Online",
+    "offline": "Offline",
+    "connecting": "Verbinden",
+    "sleeping": "Im Ruhemodus",
+    "available": "Verfügbar",
+    "unavailable": "Nicht verfügbar"
+  },
+  "ui": {
+    "login": "Anmelden",
+    "logout": "Abmelden",
+    "username": "Benutzername",
+    "password": "Passwort",
+    "submit": "Senden",
+    "cancel": "Abbrechen",
+    "save": "Speichern",
+    "delete": "Löschen",
+    "edit": "Bearbeiten",
+    "close": "Schließen",
+    "confirm": "Bestätigen",
+    "loading": "Laden...",
+    "refresh": "Aktualisieren"
+  },
+  "messages": {
+    "login_required": "Bitte melden Sie sich an, um auf diese Seite zuzugreifen",
+    "no_sensors": "Keine Sensoren konfiguriert",
+    "no_actuators": "Keine Aktoren verfügbar",
+    "loading_data": "Daten werden geladen...",
+    "connection_lost": "Verbindung verloren",
+    "connection_restored": "Verbindung wiederhergestellt",
+    "save_success": "Erfolgreich gespeichert",
+    "save_error": "Speichern fehlgeschlagen",
+    "invalid_credentials": "Ungültiger Benutzername oder Passwort",
+    "session_expired": "Sitzung abgelaufen, bitte erneut anmelden"
+  },
+  "errors": {
+    "network": "Netzwerkfehler",
+    "timeout": "Zeitüberschreitung",
+    "unauthorized": "Nicht autorisiert",
+    "not_found": "Nicht gefunden",
+    "server_error": "Serverfehler",
+    "unknown": "Unbekannter Fehler"
+  },
+  "settings": {
+    "wifi": "WLAN",
+    "system": "System",
+    "ntp": "Zeiteinstellungen",
+    "device_name": "Gerätename",
+    "admin_password": "Admin-Passwort",
+    "ota_password": "OTA-Passwort",
+    "refresh_interval": "Aktualisierungsintervall",
+    "factory_reset": "Werkseinstellungen",
+    "restart": "Gerät neu starten"
+  },
+  "time": {
+    "seconds": "Sekunden",
+    "minutes": "Minuten",
+    "hours": "Stunden",
+    "days": "Tage",
+    "second": "Sekunde",
+    "minute": "Minute",
+    "hour": "Stunde",
+    "day": "Tag",
+    "ago": "vor",
+    "uptime": "Betriebszeit"
+  },
+  "units": {
+    "celsius": "°C",
+    "fahrenheit": "°F",
+    "percent": "%",
+    "hpa": "hPa",
+    "lux": "lux",
+    "db": "dB",
+    "ppm": "ppm",
+    "watts": "W",
+    "volts": "V",
+    "amps": "A"
+  }
+}

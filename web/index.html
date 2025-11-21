@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="description" content="ESPHome Professional UI Framework">
+    <meta name="theme-color" content="#0f172a">
+    <title>ESPHome Device</title>
+
+    <!-- Stylesheets -->
+    <link rel="stylesheet" href="/css/main.css">
+    <link rel="stylesheet" href="/css/themes.css">
+
+    <!-- Preload critical resources -->
+    <link rel="preload" href="/js/app.js" as="script">
+    <link rel="preload" href="/js/api.js" as="script">
+</head>
+<body class="theme-dark">
+    <!-- Loading Screen -->
+    <div id="loading-screen" class="loading-screen">
+        <div class="loading-spinner"></div>
+        <p id="loading-text">Loading...</p>
+    </div>
+
+    <!-- Main Application -->
+    <div id="app" class="app hidden">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-left">
+                <h1 class="device-name" id="device-name">ESPHome Device</h1>
+            </div>
+            <div class="header-right">
+                <!-- Language Switcher -->
+                <div class="language-switcher" id="language-switcher">
+                    <button class="lang-btn active" data-lang="en">EN</button>
+                    <button class="lang-btn" data-lang="de">DE</button>
+                </div>
+
+                <!-- User Menu -->
+                <div class="user-menu" id="user-menu">
+                    <button class="btn-icon" id="user-menu-btn">
+                        <span id="user-icon">👤</span>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Navigation -->
+        <nav class="navigation" id="navigation">
+            <a href="#/dashboard" class="nav-link active" data-i18n="nav.dashboard">Dashboard</a>
+            <a href="#/settings" class="nav-link" data-i18n="nav.settings">Settings</a>
+            <a href="#/about" class="nav-link" data-i18n="nav.about">About</a>
+        </nav>
+
+        <!-- Main Content Area -->
+        <main class="content" id="content">
+            <!-- Router content injected here -->
+        </main>
+
+        <!-- Footer -->
+        <footer class="footer" id="footer">
+            <div class="footer-status">
+                <span id="connection-status" class="status-indicator online">
+                    <span class="status-dot"></span>
+                    <span data-i18n="status.online">Online</span>
+                </span>
+                <span class="separator">|</span>
+                <span id="uptime-display">Uptime: --</span>
+                <span class="separator">|</span>
+                <span id="memory-display">Memory: --</span>
+            </div>
+        </footer>
+    </div>
+
+    <!-- Modal Container -->
+    <div id="modal-container"></div>
+
+    <!-- Toast Notification Container -->
+    <div id="toast-container" class="toast-container"></div>
+
+    <!-- JavaScript Modules (ES6) -->
+    <script type="module">
+        // Import main application
+        import { App } from '/js/app.js';
+
+        // Initialize app when DOM is ready
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', () => {
+                const app = new App();
+                app.init();
+            });
+        } else {
+            const app = new App();
+            app.init();
+        }
+    </script>
+
+    <!-- Fallback for browsers without module support -->
+    <script nomodule>
+        document.getElementById('loading-text').textContent =
+            'Your browser does not support ES6 modules. Please use a modern browser (Chrome 60+, Firefox 60+, Safari 11+, Edge 79+).';
+        document.getElementById('loading-screen').style.background = '#ef4444';
+    </script>
+</body>
+</html>

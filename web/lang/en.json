@@ -1,0 +1,109 @@
+{
+  "meta": {
+    "language": "en",
+    "name": "English",
+    "direction": "ltr",
+    "contributors": ["ESPHome UI Framework Team"]
+  },
+  "nav": {
+    "dashboard": "Dashboard",
+    "settings": "Settings",
+    "about": "About"
+  },
+  "pages": {
+    "dashboard": "Dashboard",
+    "settings": "Settings",
+    "about": "About"
+  },
+  "sections": {
+    "sensors": "Sensors",
+    "controls": "Controls",
+    "status": "Status"
+  },
+  "components": {
+    "temperature": "Temperature",
+    "humidity": "Humidity",
+    "pressure": "Pressure",
+    "relay": "Relay",
+    "switch": "Switch",
+    "binary_sensor": "Binary Sensor"
+  },
+  "status": {
+    "online": "Online",
+    "offline": "Offline",
+    "connecting": "Connecting",
+    "sleeping": "Sleeping",
+    "available": "Available",
+    "unavailable": "Unavailable"
+  },
+  "ui": {
+    "login": "Login",
+    "logout": "Logout",
+    "username": "Username",
+    "password": "Password",
+    "submit": "Submit",
+    "cancel": "Cancel",
+    "save": "Save",
+    "delete": "Delete",
+    "edit": "Edit",
+    "close": "Close",
+    "confirm": "Confirm",
+    "loading": "Loading...",
+    "refresh": "Refresh"
+  },
+  "messages": {
+    "login_required": "Please login to access this page",
+    "no_sensors": "No sensors configured",
+    "no_actuators": "No actuators available",
+    "loading_data": "Loading data...",
+    "connection_lost": "Connection lost",
+    "connection_restored": "Connection restored",
+    "save_success": "Saved successfully",
+    "save_error": "Failed to save",
+    "invalid_credentials": "Invalid username or password",
+    "session_expired": "Session expired, please login again"
+  },
+  "errors": {
+    "network": "Network error",
+    "timeout": "Request timeout",
+    "unauthorized": "Unauthorized",
+    "not_found": "Not found",
+    "server_error": "Server error",
+    "unknown": "Unknown error"
+  },
+  "settings": {
+    "wifi": "WiFi",
+    "system": "System",
+    "ntp": "Time Settings",
+    "device_name": "Device Name",
+    "admin_password": "Admin Password",
+    "ota_password": "OTA Password",
+    "refresh_interval": "Refresh Interval",
+    "factory_reset": "Factory Reset",
+    "restart": "Restart Device"
+  },
+  "time": {
+    "seconds": "seconds",
+    "minutes": "minutes",
+    "hours": "hours",
+    "days": "days",
+    "second": "second",
+    "minute": "minute",
+    "hour": "hour",
+    "day": "day",
+    "ago": "ago",
+    "uptime": "Uptime"
+  },
+  "units": {
+    "celsius": "°C",
+    "fahrenheit": "°F",
+    "percent": "%",
+    "hpa": "hPa",
+    "lux": "lux",
+    "db": "dB",
+    "ppm": "ppm",
+    "watts": "W",
+    "volts": "V",
+    "amps": "A"
+  }
+}
