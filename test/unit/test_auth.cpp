@@ -5,6 +5,7 @@
  */
 
 #include <gtest/gtest.h>
+#include "esp_mock.h"  // Must be included before framework headers
 #include "../../framework/include/auth.h"
 #include <string>
 #include <thread>

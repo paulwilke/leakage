@@ -5,6 +5,7 @@
  */
 
 #include <gtest/gtest.h>
+#include "esp_mock.h"  // Must be included before framework headers
 #include "../../framework/include/deep_sleep.h"
 #include <vector>
 
